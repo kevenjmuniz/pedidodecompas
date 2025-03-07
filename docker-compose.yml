@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
     container_name: purchase-order-frontend
     ports:
-      - "80:80"
+      - "5690:5690"
     restart: unless-stopped
     depends_on:
       - supabase
