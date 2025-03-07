@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -69,7 +70,7 @@ const Navbar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={userData?.image} alt={userData?.name} />
+                  <AvatarImage src="" alt={userData?.name} />
                   <AvatarFallback>{userData?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Button>

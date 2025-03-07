@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Navbar } from './Navbar';
+import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 
