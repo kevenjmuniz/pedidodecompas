@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
@@ -7,6 +6,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useOrders, OrderStatus } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
   Card, 
@@ -37,7 +37,8 @@ import {
   PackageCheck, 
   PackageOpen, 
   LayoutGrid,
-  Package
+  Package,
+  Search
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -46,8 +47,9 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(undefined);
   const [view, setView] = useState<'all' | 'mine'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter orders based on status and view type
+  // Filter orders based on status, view type and search query
   const filteredOrders = React.useMemo(() => {
     let result = statusFilter ? filterOrdersByStatus(statusFilter) : orders;
     
@@ -56,11 +58,18 @@ const Dashboard: React.FC = () => {
       result = result.filter(order => order.createdBy === user?.id);
     }
     
+    // Filter by search query (order ID)
+    if (searchQuery.trim()) {
+      result = result.filter(order => 
+        order.id.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
     // Sort by most recent first
     return [...result].sort((a, b) => 
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
-  }, [orders, statusFilter, view, user, filterOrdersByStatus]);
+  }, [orders, statusFilter, view, user, filterOrdersByStatus, searchQuery]);
 
   // Count orders by status
   const statusCounts = React.useMemo(() => {
@@ -86,7 +95,6 @@ const Dashboard: React.FC = () => {
 
   // Handle refresh action
   const handleRefresh = () => {
-    // In a real app, this would refetch the orders from the API
     toast.success('Dados atualizados');
   };
 
@@ -214,6 +222,19 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
           </motion.div>
+        </div>
+
+        {/* Search field */}
+        <div className="relative mb-6">
+          <div className="flex items-center border rounded-md bg-background">
+            <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-10 border-none"
+              placeholder="Buscar por número do pedido..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Filter tabs */}
