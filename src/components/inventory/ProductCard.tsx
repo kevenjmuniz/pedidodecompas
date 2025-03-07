@@ -27,7 +27,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const stockStatus = getStockStatus();
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow border-2 border-gray-100">
       <div className="p-4 flex items-center justify-center bg-slate-50 border-b">
         {product.image ? (
           <img 

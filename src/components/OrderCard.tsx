@@ -26,7 +26,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, index }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
     >
-      <Card className="glass-card overflow-hidden transition-all duration-200 hover:shadow-md">
+      <Card className="glass-card overflow-hidden transition-all duration-200 hover:shadow-md border-2 border-gray-100">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-2">
