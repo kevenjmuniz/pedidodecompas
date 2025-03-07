@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -19,6 +18,8 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<void>;
   users: Array<{ id: string; name: string; email: string; role: 'admin' | 'user' }>;
   addUser: (name: string, email: string, password: string, role: 'admin' | 'user') => Promise<void>;
+  removeUser: (id: string) => Promise<void>;
+  changePassword: (id: string, newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -159,6 +160,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const removeUser = async (id: string) => {
+    setIsLoading(true);
+    try {
+      // Simulate API request delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if user is logged in and trying to remove themselves
+      if (user && user.id === id) {
+        throw new Error('Você não pode remover seu próprio usuário');
+      }
+      
+      // Check if user exists
+      const userToRemove = mockUsers.find(u => u.id === id);
+      if (!userToRemove) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      // Check if trying to remove one of the initial mock users
+      if (INITIAL_MOCK_USERS.some(u => u.id === id)) {
+        // Allow removing them for the demo, but in real app might prevent this
+        console.log('Removendo um usuário inicial de demonstração');
+      }
+      
+      // Remove the user
+      const updatedUsers = mockUsers.filter(u => u.id !== id);
+      setMockUsers(updatedUsers);
+      
+      // Update localStorage
+      const additionalUsers = updatedUsers.filter(
+        u => !INITIAL_MOCK_USERS.some(initial => initial.id === u.id)
+      );
+      localStorage.setItem('users', JSON.stringify(additionalUsers));
+      
+      toast.success('Usuário removido com sucesso');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao remover usuário');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changePassword = async (id: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      // Simulate API request delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Find user
+      const userIndex = mockUsers.findIndex(u => u.id === id);
+      if (userIndex === -1) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      // Update password
+      const updatedUsers = [...mockUsers];
+      updatedUsers[userIndex] = {
+        ...updatedUsers[userIndex],
+        password: newPassword
+      };
+      
+      setMockUsers(updatedUsers);
+      
+      // Update localStorage for additional users
+      const additionalUsers = updatedUsers.filter(
+        u => !INITIAL_MOCK_USERS.some(initial => initial.id === u.id)
+      );
+      localStorage.setItem('users', JSON.stringify(additionalUsers));
+      
+      toast.success('Senha alterada com sucesso');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao alterar senha');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetPassword = async (email: string) => {
     setIsLoading(true);
     try {
@@ -194,7 +273,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         resetPassword,
         users: usersWithoutPasswords,
-        addUser
+        addUser,
+        removeUser,
+        changePassword
       }}
     >
       {children}
