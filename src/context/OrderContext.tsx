@@ -12,6 +12,7 @@ export type Order = {
   reason: string;
   department: string;
   status: OrderStatus;
+  itemLink?: string;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -40,6 +41,7 @@ const SAMPLE_ORDERS: Order[] = [
     reason: 'Substituição de equipamento antigo',
     department: 'TI',
     status: 'pendente',
+    itemLink: 'https://www.dell.com/pt-br/shop/notebooks-dell/xps-13-plus/spd/xps-13-9320-laptop',
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     createdBy: '1',
@@ -52,6 +54,7 @@ const SAMPLE_ORDERS: Order[] = [
     reason: 'Reposição de estoque',
     department: 'Administrativo',
     status: 'aguardando',
+    itemLink: 'https://www.kalunga.com.br/depto/papelaria/d2',
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     createdBy: '2',
@@ -64,6 +67,7 @@ const SAMPLE_ORDERS: Order[] = [
     reason: 'Melhoria no ambiente de trabalho',
     department: 'RH',
     status: 'resolvido',
+    itemLink: 'https://www.madeiramadeira.com.br/cadeiras-de-escritorio',
     createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     createdBy: '1',
@@ -76,6 +80,7 @@ const SAMPLE_ORDERS: Order[] = [
     reason: 'Nova necessidade do departamento',
     department: 'Marketing',
     status: 'pendente',
+    itemLink: 'https://www.hp.com/br-pt/shop/impressoras.html',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     createdBy: '2',

@@ -22,7 +22,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Link as LinkIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface OrderFormProps {
@@ -33,6 +33,7 @@ interface OrderFormProps {
     reason: string;
     department: string;
     status: OrderStatus;
+    itemLink?: string;
   };
   isEditing?: boolean;
 }
@@ -54,7 +55,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     quantity: 1, 
     reason: '', 
     department: '', 
-    status: 'pendente' 
+    status: 'pendente',
+    itemLink: ''
   },
   isEditing = false
 }) => {
@@ -161,6 +163,25 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 required
                 disabled={isSubmitting}
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="itemLink" className="flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                Link do Item
+              </Label>
+              <Input
+                id="itemLink"
+                name="itemLink"
+                type="url"
+                placeholder="https://exemplo.com/produto"
+                value={formData.itemLink || ''}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                Adicione um link de onde o item pode ser encontrado
+              </p>
             </div>
             
             <div className="space-y-2">
