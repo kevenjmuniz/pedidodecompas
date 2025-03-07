@@ -45,7 +45,8 @@ import {
   ChevronDown,
   Clock,
   Building,
-  FileText 
+  FileText,
+  Link as LinkIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -263,6 +264,23 @@ const OrderDetail: React.FC = () => {
                     </h3>
                     <p className="whitespace-pre-line">{order.reason}</p>
                   </div>
+                  
+                  {order.itemLink && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground flex items-center mb-1">
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                        Link do Item
+                      </h3>
+                      <a 
+                        href={order.itemLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline break-all"
+                      >
+                        {order.itemLink}
+                      </a>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -276,11 +294,39 @@ const OrderDetail: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <StatusBadge status={order.status} size="lg" />
                     
-                    {canChangeStatus && (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/order/${order.id}`}>
-                          Alterar
-                        </Link>
+                    {canChangeStatus && !isUpdatingStatus && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            Alterar
+                            <ChevronDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange('pendente')}
+                            disabled={order.status === 'pendente'}
+                          >
+                            <StatusBadge status="pendente" size="sm" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange('aguardando')}
+                            disabled={order.status === 'aguardando'}
+                          >
+                            <StatusBadge status="aguardando" size="sm" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange('resolvido')}
+                            disabled={order.status === 'resolvido'}
+                          >
+                            <StatusBadge status="resolvido" size="sm" />
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    {isUpdatingStatus && (
+                      <Button variant="outline" size="sm" disabled>
+                        Atualizando...
                       </Button>
                     )}
                   </div>

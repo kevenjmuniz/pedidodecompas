@@ -195,6 +195,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       toast.success('Order updated successfully');
       return updatedOrder;
     } catch (error) {
+      console.error('Error updating order:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update order');
       throw error;
     } finally {
@@ -203,9 +204,15 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    console.log("Updating order status", id, status);
     if (!user) throw new Error('User not authenticated');
     
-    return updateOrder(id, { status });
+    try {
+      return await updateOrder(id, { status });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
   };
 
   const getOrderById = (id: string) => {
