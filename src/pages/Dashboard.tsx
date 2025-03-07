@@ -7,6 +7,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useOrders, OrderStatus } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { 
   Card, 
   CardContent, 
@@ -35,7 +36,8 @@ import {
   FileBox, 
   PackageCheck, 
   PackageOpen, 
-  LayoutGrid 
+  LayoutGrid,
+  Package
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
