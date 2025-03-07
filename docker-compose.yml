@@ -1,0 +1,43 @@
+
+version: '3.8'
+
+services:
+  # Frontend React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: purchase-order-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - supabase
+    networks:
+      - app-network
+
+  # Supabase Local (para desenvolvimento)
+  supabase:
+    image: supabase/supabase-docker:latest
+    container_name: supabase-local
+    ports:
+      - "54321:54321"  # API REST
+      - "54322:54322"  # Studio (interface web)
+    environment:
+      POSTGRES_PASSWORD: postgres
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      DASHBOARD_USERNAME: admin
+      DASHBOARD_PASSWORD: admin
+    volumes:
+      - supabase-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  supabase-data:
+    driver: local
