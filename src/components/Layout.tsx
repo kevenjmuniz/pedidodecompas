@@ -1,46 +1,33 @@
 
-import React, { ReactNode } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from './Navbar';
+import React from 'react';
+import { Navbar } from './Navbar';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
   requireAuth?: boolean;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, requireAuth = true }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  requireAuth = true 
+}) => {
+  const { user, isLoading } = useAuth();
 
-  // Redirect if not authenticated and page requires auth
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated && requireAuth) {
-      navigate('/', { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate, requireAuth]);
-
-  // If it's the login page or loading, don't show the navbar
-  const showNavbar = isAuthenticated && requireAuth;
+  // If authentication is required and user is not logged in, redirect to login page
+  if (requireAuth && !isLoading && !user) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      {showNavbar && <Navbar />}
-      
-      <motion.main 
-        className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-10 ${showNavbar ? 'pt-24' : 'pt-6'}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        key={location.pathname}
-      >
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <main className="flex-grow container mx-auto px-4 py-6">
         {children}
-      </motion.main>
+      </main>
+      <Toaster position="top-right" />
     </div>
   );
 };
-
-export default Layout;

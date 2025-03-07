@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
+import { useSettings } from './SettingsContext';
+import { sendWebhook } from '../services/webhookService';
 
 export type OrderStatus = 'pendente' | 'aguardando' | 'resolvido';
 
@@ -90,6 +92,7 @@ const SAMPLE_ORDERS: Order[] = [
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const { webhookUrl } = useSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -145,6 +148,21 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const updatedOrders = [...orders, newOrder];
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // Send webhook notification for new order
+      if (webhookUrl) {
+        sendWebhook(webhookUrl, {
+          event: 'new_order',
+          order: newOrder,
+          timestamp: now
+        }).then(success => {
+          if (success) {
+            console.log('Webhook notification sent successfully');
+          } else {
+            console.warn('Failed to send webhook notification');
+          }
+        });
+      }
       
       toast.success('Order created successfully');
       return newOrder;

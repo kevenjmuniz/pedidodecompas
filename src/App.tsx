@@ -1,57 +1,53 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { OrderProvider } from "./context/OrderContext";
-import { InventoryProvider } from "./context/InventoryContext";
-import { AnimatePresence } from "framer-motion";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from 'next-themes';
+import { Toaster } from './components/ui/sonner';
+import { AuthProvider } from './context/AuthContext';
+import { OrderProvider } from './context/OrderContext';
+import { InventoryProvider } from './context/InventoryContext';
+import { SettingsProvider } from './context/SettingsContext';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import NewOrder from './pages/NewOrder';
+import EditOrder from './pages/EditOrder';
+import OrderDetail from './pages/OrderDetail';
+import NotFound from './pages/NotFound';
+import Inventory from './pages/Inventory';
+import NewProduct from './pages/NewProduct';
+import ProductDetail from './pages/ProductDetail';
+import UserManagement from './pages/UserManagement';
+import Settings from './pages/Settings';
+import './App.css';
 
-// Pages
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import OrderDetail from "./pages/OrderDetail";
-import NewOrder from "./pages/NewOrder";
-import EditOrder from "./pages/EditOrder";
-import NotFound from "./pages/NotFound";
-import UserManagementPage from "./pages/UserManagement";
-import Inventory from "./pages/Inventory";
-import ProductDetail from "./pages/ProductDetail";
-import NewProduct from "./pages/NewProduct";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <ThemeProvider defaultTheme="light" attribute="class">
       <AuthProvider>
-        <OrderProvider>
-          <InventoryProvider>
-            <Toaster />
-            <Sonner position="top-right" closeButton />
-            <BrowserRouter>
-              <AnimatePresence mode="wait">
+        <SettingsProvider>
+          <OrderProvider>
+            <InventoryProvider>
+              <Router>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/order/:id" element={<OrderDetail />} />
                   <Route path="/new-order" element={<NewOrder />} />
                   <Route path="/edit-order/:id" element={<EditOrder />} />
-                  <Route path="/users" element={<UserManagementPage />} />
+                  <Route path="/order/:id" element={<OrderDetail />} />
                   <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/inventory/:id" element={<ProductDetail />} />
-                  <Route path="/inventory/new" element={<NewProduct />} />
+                  <Route path="/new-product" element={<NewProduct />} />
+                  <Route path="/product/:id" element={<ProductDetail />} />
+                  <Route path="/users" element={<UserManagement />} />
+                  <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </AnimatePresence>
-            </BrowserRouter>
-          </InventoryProvider>
-        </OrderProvider>
+              </Router>
+              <Toaster />
+            </InventoryProvider>
+          </OrderProvider>
+        </SettingsProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;
