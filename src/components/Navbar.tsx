@@ -1,9 +1,16 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { User, Menu, X, LogOut, Plus, Home, Users } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  ListPlus, 
+  Package, 
+  Users, 
+  LogOut,
+  Settings,
+  UserCog
+} from 'lucide-react';
+import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,132 +18,83 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useUser } from '@/hooks/useUser';
+import { cn } from '@/lib/utils';
 
-export const Navbar: React.FC = () => {
+const Navbar = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const userData = useUser();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/', { replace: true });
-  };
+  const isAdmin = user?.role === 'admin';
+
+  // Update the NavItems array to include the inventory link
+  const NavItems = [
+    { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4 mr-2" /> },
+    { label: 'Pedidos', path: '/new-order', icon: <ListPlus className="w-4 h-4 mr-2" /> },
+    { label: 'Inventário', path: '/inventory', icon: <Package className="w-4 h-4 mr-2" /> },
+    { label: 'Usuários', path: '/users', icon: <Users className="w-4 h-4 mr-2" />, adminOnly: true },
+  ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link to="/dashboard" className="flex items-center">
-              <span className="text-primary font-semibold text-xl">Sistema de Pedidos</span>
-            </Link>
+    <div className="bg-background border-b sticky top-0 z-50">
+      <div className="flex h-16 items-center px-4 container">
+        <Link to="/dashboard" className="font-bold text-2xl">
+          Sistema de Compras
+        </Link>
+        <div className="ml-auto flex items-center gap-4">
+          <div className="hidden md:flex gap-2">
+            {NavItems.map((item, index) => (
+              (!item.adminOnly || isAdmin) && (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  className={cn(location.pathname === item.path ? 'bg-secondary' : '')}
+                >
+                  <Link to={item.path} className="flex items-center">
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                </Button>
+              )
+            ))}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center -mr-2 sm:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-expanded={isMenuOpen}
-              className="inline-flex items-center justify-center"
-              aria-label="Main menu"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-
-          {/* Desktop navigation */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-4">
-            <Button variant="ghost" asChild className="text-foreground/80 hover:text-foreground">
-              <Link to="/dashboard">
-                <Home className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" asChild className="text-foreground/80 hover:text-foreground">
-              <Link to="/new-order">
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Pedido
-              </Link>
-            </Button>
-            
-            {user && user.role === 'admin' && (
-              <Button variant="ghost" asChild className="text-foreground/80 hover:text-foreground">
-                <Link to="/users">
-                  <Users className="mr-2 h-4 w-4" />
-                  Usuários
-                </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userData?.image} alt={userData?.name} />
+                  <AvatarFallback>{userData?.name?.charAt(0)}</AvatarFallback>
+                </Avatar>
               </Button>
-            )}
-
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="ml-2">
-                    <User className="mr-2 h-4 w-4" />
-                    {user.name}
-                    {user.role === 'admin' && <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">Admin</span>}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {user.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/users">
-                        <Users className="mr-2 h-4 w-4" />
-                        Gerenciar Usuários
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <UserCog className="h-4 w-4 mr-2" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="h-4 w-4 mr-2" />
+                <span>Configurações</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="sm:hidden animate-slide-up">
-          <div className="pt-2 pb-3 space-y-1 px-4">
-            <Button variant="ghost" asChild className="w-full justify-start text-foreground/80 hover:text-foreground">
-              <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                <Home className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" asChild className="w-full justify-start text-foreground/80 hover:text-foreground">
-              <Link to="/new-order" onClick={() => setIsMenuOpen(false)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Pedido
-              </Link>
-            </Button>
-            
-            {user && user.role === 'admin' && (
-              <Button variant="ghost" asChild className="w-full justify-start text-foreground/80 hover:text-foreground">
-                <Link to="/users" onClick={() => setIsMenuOpen(false)}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Usuários
-                </Link>
-              </Button>
-            )}
-            
-            <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      )}
-    </nav>
+    </div>
   );
 };
+
+export default Navbar;
