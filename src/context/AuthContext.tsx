@@ -17,12 +17,14 @@ type AuthContextType = {
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  users: Array<{ id: string; name: string; email: string; role: 'admin' | 'user' }>;
+  addUser: (name: string, email: string, password: string, role: 'admin' | 'user') => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo purposes
-const MOCK_USERS = [
+// Mock users for demo purposes - converting to state so we can update it
+const INITIAL_MOCK_USERS = [
   {
     id: '1',
     name: 'Admin User',
@@ -42,10 +44,18 @@ const MOCK_USERS = [
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mockUsers, setMockUsers] = useState(INITIAL_MOCK_USERS);
 
   useEffect(() => {
     // Check if user is stored in localStorage
     const storedUser = localStorage.getItem('user');
+    
+    // Check if we have stored additional users
+    const storedUsers = localStorage.getItem('users');
+    if (storedUsers) {
+      setMockUsers([...INITIAL_MOCK_USERS, ...JSON.parse(storedUsers)]);
+    }
+    
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -59,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Find user with matching credentials
-      const foundUser = MOCK_USERS.find(
+      const foundUser = mockUsers.find(
         u => u.email === email && u.password === password
       );
       
@@ -96,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Check if email already exists
-      if (MOCK_USERS.some(u => u.email === email)) {
+      if (mockUsers.some(u => u.email === email)) {
         throw new Error('Email already in use');
       }
       
@@ -110,6 +120,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addUser = async (name: string, email: string, password: string, role: 'admin' | 'user') => {
+    setIsLoading(true);
+    try {
+      // Simulate API request delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if email already exists
+      if (mockUsers.some(u => u.email === email)) {
+        throw new Error('Email already in use');
+      }
+
+      const newUser = {
+        id: String(mockUsers.length + 1),
+        name,
+        email,
+        password,
+        role,
+      };
+      
+      // Add the new user to the mockUsers array
+      const updatedUsers = [...mockUsers, newUser];
+      setMockUsers(updatedUsers);
+      
+      // Store the additional users in localStorage
+      // We only store the users that are not part of the initial set
+      const additionalUsers = updatedUsers.filter(
+        u => !INITIAL_MOCK_USERS.some(initial => initial.id === u.id)
+      );
+      localStorage.setItem('users', JSON.stringify(additionalUsers));
+      
+      toast.success('User added successfully!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to add user');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetPassword = async (email: string) => {
     setIsLoading(true);
     try {
@@ -117,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Check if email exists
-      if (!MOCK_USERS.some(u => u.email === email)) {
+      if (!mockUsers.some(u => u.email === email)) {
         throw new Error('Email not found');
       }
       
@@ -131,6 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Create a users array for the context without passwords
+  const usersWithoutPasswords = mockUsers.map(({ password: _, ...rest }) => rest);
+
   return (
     <AuthContext.Provider
       value={{
@@ -140,7 +192,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         register,
-        resetPassword
+        resetPassword,
+        users: usersWithoutPasswords,
+        addUser
       }}
     >
       {children}

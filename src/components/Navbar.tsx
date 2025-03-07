@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { User, Menu, X, LogOut, Plus, Home } from 'lucide-react';
+import { User, Menu, X, LogOut, Plus, Home, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +62,15 @@ export const Navbar: React.FC = () => {
                 Novo Pedido
               </Link>
             </Button>
+            
+            {user && user.role === 'admin' && (
+              <Button variant="ghost" asChild className="text-foreground/80 hover:text-foreground">
+                <Link to="/users">
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuários
+                </Link>
+              </Button>
+            )}
 
             {user && (
               <DropdownMenu>
@@ -75,6 +84,14 @@ export const Navbar: React.FC = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/users">
+                        <Users className="mr-2 h-4 w-4" />
+                        Gerenciar Usuários
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair
@@ -103,6 +120,15 @@ export const Navbar: React.FC = () => {
                 Novo Pedido
               </Link>
             </Button>
+            
+            {user && user.role === 'admin' && (
+              <Button variant="ghost" asChild className="w-full justify-start text-foreground/80 hover:text-foreground">
+                <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuários
+                </Link>
+              </Button>
+            )}
             
             <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
               <LogOut className="mr-2 h-4 w-4" />
