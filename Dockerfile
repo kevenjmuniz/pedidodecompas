@@ -24,8 +24,8 @@ COPY --from=build /app/package.json ./package.json
 # Install a simple server to serve static files
 RUN npm install -g serve
 
-# Expose port 5690
-EXPOSE 5690
+# Expose port 8080
+EXPOSE 8080
 
 # Start serving the application
-CMD ["serve", "-s", "dist", "-l", "5690"]
+CMD ["serve", "-s", "dist", "-l", "8080"]
