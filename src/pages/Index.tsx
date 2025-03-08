@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { AuthForm } from '../components/AuthForm';
 import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from 'lucide-react';
 

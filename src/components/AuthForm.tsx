@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 export function AuthForm() {
@@ -19,7 +19,6 @@ export function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [captchaText, setCaptchaText] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,24 +136,40 @@ export function AuthForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex flex-col items-center text-xs">
+      <CardFooter className="flex flex-col space-y-2 items-center text-xs">
         {authMode === 'login' ? (
           <>
-            <Link to="/register" className="hover:underline">
+            <Button 
+              variant="link" 
+              onClick={() => setAuthMode('register')} 
+              className="hover:underline"
+            >
               Criar uma conta
-            </Link>
-            <Link to="/reset-password" className="hover:underline">
+            </Button>
+            <Button 
+              variant="link" 
+              onClick={() => setAuthMode('reset')} 
+              className="hover:underline"
+            >
               Esqueceu sua senha?
-            </Link>
+            </Button>
           </>
         ) : authMode === 'register' ? (
-          <Link to="/" className="hover:underline">
+          <Button 
+            variant="link" 
+            onClick={() => setAuthMode('login')} 
+            className="hover:underline"
+          >
             Já tem uma conta?
-          </Link>
+          </Button>
         ) : (
-          <Link to="/" className="hover:underline">
+          <Button 
+            variant="link" 
+            onClick={() => setAuthMode('login')} 
+            className="hover:underline"
+          >
             Voltar para o login
-          </Link>
+          </Button>
         )}
       </CardFooter>
     </Card>
