@@ -4,6 +4,7 @@ export type User = {
   name: string;
   email: string;
   role: 'admin' | 'user';
+  status: 'pending' | 'approved' | 'rejected';
 };
 
 export type AuthUser = User & {
@@ -22,4 +23,6 @@ export type AuthContextType = {
   addUser: (name: string, email: string, password: string, role: 'admin' | 'user') => Promise<void>;
   removeUser: (id: string) => Promise<void>;
   changePassword: (id: string, newPassword: string) => Promise<void>;
+  approveUser: (id: string) => Promise<void>;
+  rejectUser: (id: string) => Promise<void>;
 };

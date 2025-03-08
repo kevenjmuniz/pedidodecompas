@@ -6,6 +6,8 @@ import { AuthForm } from '../components/AuthForm';
 import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from 'lucide-react';
 
 const Index: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -31,6 +33,16 @@ const Index: React.FC = () => {
             Plataforma eficiente para gerenciar suas solicitações de compra
           </p>
         </motion.div>
+        
+        <div className="w-full max-w-md mb-4">
+          <Alert className="mb-4 bg-blue-50 border-blue-200">
+            <InfoIcon className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Aprovação Necessária</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              Novas contas precisam de aprovação de um administrador antes de acessar o sistema.
+            </AlertDescription>
+          </Alert>
+        </div>
         
         <div className="w-full max-w-md mb-12">
           <AuthForm />

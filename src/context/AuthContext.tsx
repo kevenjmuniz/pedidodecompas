@@ -8,7 +8,9 @@ import {
   removeUserService,
   changePasswordService,
   resetPasswordService,
-  getUsersWithoutPasswords
+  getUsersWithoutPasswords,
+  approveUserService,
+  rejectUserService
 } from '../services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,6 +116,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const approveUser = async (id: string) => {
+    setIsLoading(true);
+    try {
+      await approveUserService(id);
+      refreshUsers();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const rejectUser = async (id: string) => {
+    setIsLoading(true);
+    try {
+      await rejectUserService(id);
+      refreshUsers();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -127,7 +153,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         users,
         addUser,
         removeUser,
-        changePassword
+        changePassword,
+        approveUser,
+        rejectUser
       }}
     >
       {children}

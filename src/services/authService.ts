@@ -37,7 +37,16 @@ export const loginService = async (
   );
   
   if (!foundUser) {
-    throw new Error('Invalid email or password');
+    throw new Error('Credenciais inválidas');
+  }
+  
+  // Check if user is approved
+  if (foundUser.status === 'pending') {
+    throw new Error('Sua conta está aguardando aprovação do administrador.');
+  }
+  
+  if (foundUser.status === 'rejected') {
+    throw new Error('Sua solicitação de acesso foi rejeitada. Entre em contato com o administrador.');
   }
   
   // Create user object without password
@@ -46,7 +55,7 @@ export const loginService = async (
   // Store in localStorage
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
   
-  toast.success('Login successful');
+  toast.success('Login realizado com sucesso');
   return userWithoutPassword;
 };
 
@@ -63,16 +72,18 @@ export const registerService = async (
   
   // Check if email already exists
   if (currentUsers.some(u => u.email === email)) {
-    throw new Error('Email already in use');
+    throw new Error('E-mail já está em uso');
   }
   
-  // Create new user with admin role for the first user, otherwise regular user
+  // Create new user with admin role for the first user (auto-approved), otherwise pending user
+  const isFirstUser = currentUsers.length === 0;
   const newUser: AuthUser = {
     id: String(Date.now()),
     name,
     email,
     password,
-    role: currentUsers.length === 0 ? 'admin' : 'user',
+    role: isFirstUser ? 'admin' : 'user',
+    status: isFirstUser ? 'approved' : 'pending',
   };
   
   // Add the new user
@@ -84,7 +95,11 @@ export const registerService = async (
   // Send webhook notification for account creation
   triggerAccountCreatedWebhooks(newUser);
   
-  toast.success('Registration successful! You can now login.');
+  if (isFirstUser) {
+    toast.success('Registro realizado com sucesso! Você já pode fazer login.');
+  } else {
+    toast.success('Registro realizado com sucesso! Aguardando aprovação do administrador.');
+  }
 };
 
 // Add user service
@@ -101,7 +116,7 @@ export const addUserService = async (
   
   // Check if email already exists
   if (currentUsers.some(u => u.email === email)) {
-    throw new Error('Email already in use');
+    throw new Error('E-mail já está em uso');
   }
 
   const newUser: AuthUser = {
@@ -110,6 +125,7 @@ export const addUserService = async (
     email,
     password,
     role,
+    status: 'approved', // Users added by admin are approved by default
   };
   
   // Add the new user
@@ -121,7 +137,7 @@ export const addUserService = async (
   // Send webhook notification for account creation
   triggerAccountCreatedWebhooks(newUser);
   
-  toast.success('User added successfully!');
+  toast.success('Usuário adicionado com sucesso!');
 };
 
 // Function to trigger account created webhooks
@@ -217,4 +233,56 @@ export const resetPasswordService = async (email: string): Promise<void> => {
 // Get users without passwords
 export const getUsersWithoutPasswords = (): User[] => {
   return getStoredUsers().map(({ password: _, ...rest }) => rest);
+};
+
+// Approve user
+export const approveUserService = async (id: string): Promise<void> => {
+  // Simulate API request delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const currentUsers = getStoredUsers();
+  
+  // Find user
+  const userIndex = currentUsers.findIndex(u => u.id === id);
+  if (userIndex === -1) {
+    throw new Error('Usuário não encontrado');
+  }
+  
+  // Update status
+  const updatedUsers = [...currentUsers];
+  updatedUsers[userIndex] = {
+    ...updatedUsers[userIndex],
+    status: 'approved'
+  };
+  
+  // Update localStorage
+  storeUsers(updatedUsers);
+  
+  toast.success('Usuário aprovado com sucesso');
+};
+
+// Reject user
+export const rejectUserService = async (id: string): Promise<void> => {
+  // Simulate API request delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const currentUsers = getStoredUsers();
+  
+  // Find user
+  const userIndex = currentUsers.findIndex(u => u.id === id);
+  if (userIndex === -1) {
+    throw new Error('Usuário não encontrado');
+  }
+  
+  // Update status
+  const updatedUsers = [...currentUsers];
+  updatedUsers[userIndex] = {
+    ...updatedUsers[userIndex],
+    status: 'rejected'
+  };
+  
+  // Update localStorage
+  storeUsers(updatedUsers);
+  
+  toast.success('Usuário rejeitado com sucesso');
 };

@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Captcha } from './Captcha';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ClockIcon } from 'lucide-react';
 
-type AuthMode = 'login' | 'register' | 'reset';
+type AuthMode = 'login' | 'register' | 'reset' | 'pending';
 
 export const AuthForm: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('login');
@@ -47,8 +49,7 @@ export const AuthForm: React.FC = () => {
         navigate('/dashboard');
       } else if (mode === 'register') {
         await register(name, email, password);
-        setMode('login');
-        toast.success('Conta criada com sucesso! Faça login para continuar.');
+        setMode('pending');
         // Reset captcha state after successful registration
         setShowCaptcha(false);
         setIsCaptchaVerified(false);
@@ -56,8 +57,12 @@ export const AuthForm: React.FC = () => {
         await resetPassword(email);
         setMode('login');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      // Check for pending approval error
+      if (error.message && error.message.includes('aguardando aprovação')) {
+        setMode('pending');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +80,45 @@ export const AuthForm: React.FC = () => {
     setIsCaptchaVerified(false);
     setShowCaptcha(false);
   };
+
+  // Show pending approval message
+  if (mode === 'pending') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md mx-auto"
+      >
+        <Card className="glass-card overflow-hidden">
+          <CardHeader className="space-y-1 py-6">
+            <CardTitle className="text-center text-2xl font-medium">
+              Conta Criada
+            </CardTitle>
+            <CardDescription className="text-center">
+              Sua conta foi criada e está aguardando aprovação
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="bg-yellow-50 border-yellow-200 mb-4">
+              <ClockIcon className="h-4 w-4 text-yellow-600" />
+              <AlertTitle className="text-yellow-800">Aguardando aprovação</AlertTitle>
+              <AlertDescription className="text-yellow-700">
+                Sua conta foi criada com sucesso, mas precisa ser aprovada por um administrador antes que você possa fazer login.
+                Você receberá uma notificação quando sua conta for aprovada.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              className="w-full mt-4" 
+              onClick={() => switchMode('login')}
+            >
+              Voltar para o Login
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
