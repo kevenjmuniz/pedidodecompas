@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const loggedInUser = await loginService(email, password);
       setUser(loggedInUser);
+      refreshUsers(); // Refresh users list after login
     } catch (error) {
       throw error;
     } finally {

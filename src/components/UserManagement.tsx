@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { UserCog, UserMinus, ShieldAlert, LockKeyhole, UserCheck, UserX } from 'lucide-react';
+import { UserCog, UserMinus, ShieldAlert, LockKeyhole, UserCheck, UserX, Bell } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const UserManagement: React.FC = () => {
@@ -49,6 +48,17 @@ export const UserManagement: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Check for pending users on mount and switch to pending tab if there are any
+  useEffect(() => {
+    const pendingUsers = users.filter(user => user.status === 'pending');
+    if (pendingUsers.length > 0 && activeTab === 'all') {
+      setActiveTab('pending');
+      toast.info(`${pendingUsers.length} usuário(s) aguardando aprovação`, {
+        icon: <Bell className="h-5 w-5" />,
+      });
+    }
+  }, [users]);
 
   // Only admin users should be able to access this component
   if (!currentUser || currentUser.role !== 'admin') {
@@ -157,7 +167,14 @@ export const UserManagement: React.FC = () => {
       className="w-full space-y-4"
     >
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gerenciamento de Usuários</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Gerenciamento de Usuários</h2>
+          {pendingUsers.length > 0 && (
+            <p className="text-yellow-600 font-medium mt-1">
+              {pendingUsers.length} usuário(s) aguardando aprovação
+            </p>
+          )}
+        </div>
         <Button 
           onClick={() => {
             setIsAddingUser(!isAddingUser);
@@ -180,6 +197,15 @@ export const UserManagement: React.FC = () => {
               Existem {pendingUsers.length} usuários aguardando sua aprovação
             </CardDescription>
           </CardHeader>
+          <CardContent className="pt-0">
+            <Button 
+              variant="outline" 
+              className="text-yellow-600 border-yellow-300 hover:bg-yellow-100"
+              onClick={() => setActiveTab('pending')}
+            >
+              Ver Solicitações
+            </Button>
+          </CardContent>
         </Card>
       )}
 
@@ -315,7 +341,7 @@ export const UserManagement: React.FC = () => {
           <TabsTrigger value="all">
             Todos <span className="ml-2 bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs">{users.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="pending">
+          <TabsTrigger value="pending" className={pendingUsers.length > 0 ? "animate-pulse bg-yellow-100 text-yellow-800" : ""}>
             Pendentes <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs">{pendingUsers.length}</span>
           </TabsTrigger>
           <TabsTrigger value="approved">
@@ -398,7 +424,6 @@ export const UserManagement: React.FC = () => {
   );
 };
 
-// Create a separate component for the user table
 interface UserTableProps {
   users: Array<{
     id: string;

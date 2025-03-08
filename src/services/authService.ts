@@ -15,7 +15,10 @@ export const getStoredUsers = (): AuthUser[] => {
     return JSON.parse(storedUsers);
   }
   
-  return [];
+  // Initialize with empty array if no users exist
+  const emptyUsers: AuthUser[] = [];
+  localStorage.setItem('users', JSON.stringify(emptyUsers));
+  return emptyUsers;
 };
 
 // Store users
