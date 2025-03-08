@@ -1,6 +1,11 @@
 
 import { User, AuthUser } from '../types/auth';
 import { toast } from 'sonner';
+import {
+  getWebhookConfigs,
+  createAccountCreatedPayload,
+  sendWebhook
+} from './webhookService';
 
 // Get all users from storage
 export const getStoredUsers = (): AuthUser[] => {
@@ -76,6 +81,9 @@ export const registerService = async (
   // Store all users
   storeUsers(updatedUsers);
   
+  // Send webhook notification for account creation
+  triggerAccountCreatedWebhooks(newUser);
+  
   toast.success('Registration successful! You can now login.');
 };
 
@@ -110,7 +118,28 @@ export const addUserService = async (
   // Store all users
   storeUsers(updatedUsers);
   
+  // Send webhook notification for account creation
+  triggerAccountCreatedWebhooks(newUser);
+  
   toast.success('User added successfully!');
+};
+
+// Function to trigger account created webhooks
+const triggerAccountCreatedWebhooks = (user: AuthUser) => {
+  const { password: _, ...userWithoutPassword } = user;
+  
+  // Get all active webhooks that listen for account creation events
+  const webhooks = getWebhookConfigs().filter(
+    webhook => webhook.enabled && webhook.events.includes('conta_criada')
+  );
+  
+  // Send webhook notifications
+  webhooks.forEach(webhook => {
+    const payload = createAccountCreatedPayload(userWithoutPassword);
+    sendWebhook(webhook, payload).catch(error => {
+      console.error('Failed to send account creation webhook:', error);
+    });
+  });
 };
 
 // Remove user service

@@ -1,8 +1,3 @@
-
-/**
- * Webhook service for sending notifications to external systems
- */
-
 export interface WebhookConfig {
   url: string;
   id: string;
@@ -13,7 +8,7 @@ export interface WebhookConfig {
   maxRetries?: number;
 }
 
-export type WebhookEvent = 'pedido_criado' | 'status_atualizado' | 'pedido_cancelado';
+export type WebhookEvent = 'pedido_criado' | 'status_atualizado' | 'pedido_cancelado' | 'conta_criada';
 
 export interface WebhookPayload {
   evento: WebhookEvent;
@@ -33,14 +28,6 @@ export interface WebhookLog {
   retryOf?: string;
 }
 
-/**
- * Send a webhook notification
- * @param webhookConfig The webhook configuration
- * @param payload The data to send in the webhook
- * @param retryCount Current retry attempt (for internal use)
- * @param retryOf Original webhook log ID being retried (for internal use)
- * @returns A promise that resolves with the webhook log entry
- */
 export const sendWebhook = async (
   webhookConfig: WebhookConfig,
   payload: WebhookPayload,
@@ -52,17 +39,14 @@ export const sendWebhook = async (
     return createWebhookLog(webhookConfig.id, '', payload, false, undefined, 'URL do webhook não configurada', retryCount, retryOf);
   }
 
-  // Generate a unique ID for this webhook call
   const logId = generateId();
   
   try {
     console.log(`Sending webhook to ${webhookConfig.url}`, payload);
     
-    // Use fetch with a timeout to prevent hanging
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    // Prepare headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...webhookConfig.headers,
@@ -71,11 +55,10 @@ export const sendWebhook = async (
     const response = await fetch(webhookConfig.url, {
       method: 'POST',
       headers,
-      mode: 'cors', // Try with standard CORS first
+      mode: 'cors',
       body: JSON.stringify(payload),
       signal: controller.signal
     }).catch(error => {
-      // If we get a CORS error, try again with no-cors mode
       if (error.name === 'TypeError') {
         return fetch(webhookConfig.url, {
           method: 'POST',
@@ -90,7 +73,6 @@ export const sendWebhook = async (
     
     clearTimeout(timeoutId);
     
-    // Check for response status if available
     if (response.status && response.status >= 400) {
       console.error(`Webhook request failed with status: ${response.status}`);
       const log = createWebhookLog(
@@ -105,7 +87,6 @@ export const sendWebhook = async (
         logId
       );
       
-      // Schedule a retry if needed
       if (retryCount < (webhookConfig.maxRetries || 3)) {
         setTimeout(() => {
           sendWebhook(webhookConfig, payload, retryCount + 1, logId);
@@ -132,7 +113,6 @@ export const sendWebhook = async (
     
     let errorMessage = 'Erro ao enviar webhook';
     
-    // Provide more specific error messages
     if (error.name === 'AbortError') {
       errorMessage = 'Tempo limite excedido ao tentar contatar o servidor';
     } else if (error.name === 'TypeError') {
@@ -153,7 +133,6 @@ export const sendWebhook = async (
       logId
     );
     
-    // Schedule a retry if needed
     if (retryCount < (webhookConfig.maxRetries || 3)) {
       setTimeout(() => {
         sendWebhook(webhookConfig, payload, retryCount + 1, logId);
@@ -164,18 +143,11 @@ export const sendWebhook = async (
   }
 };
 
-/**
- * Get the delay for retry attempts using exponential backoff
- */
 const getRetryDelay = (retryCount: number): number => {
-  // Exponential backoff: 2^n * 1000 milliseconds + some jitter
   const jitter = Math.random() * 1000;
-  return Math.min(Math.pow(2, retryCount) * 1000 + jitter, 30000); // Max 30 seconds
+  return Math.min(Math.pow(2, retryCount) * 1000 + jitter, 30000);
 };
 
-/**
- * Create a webhook log entry
- */
 const createWebhookLog = (
   webhookId: string,
   webhookUrl: string,
@@ -200,21 +172,16 @@ const createWebhookLog = (
     retryOf
   };
   
-  // Save to log storage
   saveWebhookLog(log);
   
   return log;
 };
 
-/**
- * Save webhook log to storage (localStorage for now)
- */
 const saveWebhookLog = (log: WebhookLog): void => {
   try {
     const logs = getWebhookLogs();
-    logs.unshift(log); // Add to the beginning of the array
+    logs.unshift(log);
     
-    // Limit the log size to prevent storage issues
     const limitedLogs = logs.slice(0, 100);
     localStorage.setItem('webhookLogs', JSON.stringify(limitedLogs));
   } catch (error) {
@@ -222,9 +189,6 @@ const saveWebhookLog = (log: WebhookLog): void => {
   }
 };
 
-/**
- * Get all webhook logs from storage
- */
 export const getWebhookLogs = (): WebhookLog[] => {
   try {
     const logsJson = localStorage.getItem('webhookLogs');
@@ -235,16 +199,10 @@ export const getWebhookLogs = (): WebhookLog[] => {
   }
 };
 
-/**
- * Generate a random ID
- */
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
-/**
- * Test a webhook configuration
- */
 export const testWebhook = async (webhookConfig: WebhookConfig): Promise<WebhookLog> => {
   const testPayload: WebhookPayload = {
     evento: 'pedido_criado',
@@ -256,9 +214,6 @@ export const testWebhook = async (webhookConfig: WebhookConfig): Promise<Webhook
   return sendWebhook(webhookConfig, testPayload);
 };
 
-/**
- * Get all webhook configurations
- */
 export const getWebhookConfigs = (): WebhookConfig[] => {
   try {
     const configsJson = localStorage.getItem('webhookConfigs');
@@ -269,9 +224,6 @@ export const getWebhookConfigs = (): WebhookConfig[] => {
   }
 };
 
-/**
- * Save webhook configurations
- */
 export const saveWebhookConfigs = (configs: WebhookConfig[]): void => {
   try {
     localStorage.setItem('webhookConfigs', JSON.stringify(configs));
@@ -280,9 +232,6 @@ export const saveWebhookConfigs = (configs: WebhookConfig[]): void => {
   }
 };
 
-/**
- * Add or update a webhook configuration
- */
 export const saveWebhookConfig = (config: WebhookConfig): WebhookConfig => {
   const configs = getWebhookConfigs();
   const index = configs.findIndex(c => c.id === config.id);
@@ -297,18 +246,12 @@ export const saveWebhookConfig = (config: WebhookConfig): WebhookConfig => {
   return config;
 };
 
-/**
- * Delete a webhook configuration
- */
 export const deleteWebhookConfig = (id: string): void => {
   const configs = getWebhookConfigs();
   const filteredConfigs = configs.filter(c => c.id !== id);
   saveWebhookConfigs(filteredConfigs);
 };
 
-/**
- * Create a webhook payload for a new order
- */
 export const createOrderCreatedPayload = (order: any): WebhookPayload => {
   return {
     evento: 'pedido_criado',
@@ -323,9 +266,6 @@ export const createOrderCreatedPayload = (order: any): WebhookPayload => {
   };
 };
 
-/**
- * Create a webhook payload for an order status update
- */
 export const createOrderStatusUpdatedPayload = (
   order: any, 
   previousStatus: string, 
@@ -343,9 +283,6 @@ export const createOrderStatusUpdatedPayload = (
   };
 };
 
-/**
- * Create a webhook payload for a canceled order
- */
 export const createOrderCanceledPayload = (order: any, canceledBy: string): WebhookPayload => {
   return {
     evento: 'pedido_cancelado',
@@ -355,5 +292,16 @@ export const createOrderCanceledPayload = (order: any, canceledBy: string): Webh
     motivo_cancelamento: "Pedido cancelado pelo usuário",
     cancelado_por: canceledBy,
     data_cancelamento: new Date().toISOString()
+  };
+};
+
+export const createAccountCreatedPayload = (user: any): WebhookPayload => {
+  return {
+    evento: 'conta_criada',
+    usuario_id: user.id,
+    nome: user.name,
+    email: user.email,
+    perfil: user.role,
+    data_criacao: new Date().toISOString()
   };
 };

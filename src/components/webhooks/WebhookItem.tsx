@@ -1,7 +1,4 @@
 
-// Note: This file is read-only but let's assume we need to create or update it
-// This is a mock representation of what the file should contain with left-aligned text
-
 import React from 'react';
 import { WebhookConfig } from '../../services/webhookService';
 import { Button } from '@/components/ui/button';
@@ -28,7 +25,8 @@ const WebhookItem: React.FC<WebhookItemProps> = ({
   const eventLabels: Record<string, string> = {
     'pedido_criado': 'Pedido Criado',
     'status_atualizado': 'Status Atualizado',
-    'pedido_cancelado': 'Pedido Cancelado'
+    'pedido_cancelado': 'Pedido Cancelado',
+    'conta_criada': 'Conta Criada'
   };
   
   return (

@@ -128,6 +128,15 @@ const WebhookForm: React.FC<WebhookFormProps> = ({ initialData, onSave, onCancel
                 />
                 <Label htmlFor="event-order-canceled" className="text-left">Pedido Cancelado</Label>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="event-account-created" 
+                  checked={events.includes('conta_criada')}
+                  onCheckedChange={() => toggleEvent('conta_criada')}
+                />
+                <Label htmlFor="event-account-created" className="text-left">Nova Conta Criada</Label>
+              </div>
             </div>
           </div>
           
