@@ -3,7 +3,14 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
-import { sendWebhook } from '../services/webhookService';
+import { 
+  WebhookConfig, 
+  WebhookEvent,
+  createOrderCreatedPayload,
+  createOrderStatusUpdatedPayload,
+  createOrderCanceledPayload,
+  sendWebhook
+} from '../services/webhookService';
 
 export type OrderStatus = 'pendente' | 'aguardando' | 'resolvido';
 
@@ -92,7 +99,7 @@ const SAMPLE_ORDERS: Order[] = [
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { webhookUrl } = useSettings();
+  const { webhookUrl, webhookConfigs } = useSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -127,6 +134,37 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user]);
 
+  // Helper function to send webhooks for an event
+  const sendWebhookNotifications = async (
+    event: WebhookEvent, 
+    payload: any, 
+    specificWebhook?: string
+  ) => {
+    // Get enabled webhook configs that are subscribed to this event
+    const eligibleWebhooks = webhookConfigs.filter(config => 
+      config.enabled && 
+      config.events.includes(event) && 
+      (specificWebhook ? config.id === specificWebhook : true)
+    );
+    
+    // For the legacy webhook URL (older version support)
+    if (webhookUrl && !specificWebhook) {
+      const legacyConfig: WebhookConfig = {
+        id: 'legacy',
+        url: webhookUrl,
+        name: 'Webhook Padrão (Legado)',
+        events: ['pedido_criado', 'status_atualizado', 'pedido_cancelado'],
+        enabled: true
+      };
+      
+      await sendWebhook(legacyConfig, payload);
+    }
+    
+    // Send to all eligible webhooks
+    const promises = eligibleWebhooks.map(config => sendWebhook(config, payload));
+    await Promise.allSettled(promises);
+  };
+
   const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName'>) => {
     if (!user) throw new Error('User not authenticated');
     
@@ -149,20 +187,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // Send webhook notification for new order
-      if (webhookUrl) {
-        const result = await sendWebhook(webhookUrl, {
-          event: 'new_order',
-          order: newOrder,
-          timestamp: now
-        });
-        
-        if (result.success) {
-          console.log('Webhook notification sent successfully');
-        } else {
-          console.warn('Failed to send webhook notification:', result.message);
-        }
-      }
+      // Create webhook payload and send notifications
+      const payload = createOrderCreatedPayload(newOrder);
+      await sendWebhookNotifications('pedido_criado', payload);
       
       toast.success('Order created successfully');
       return newOrder;
@@ -198,6 +225,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
       
+      // Check if status is being updated
+      const statusChanged = updates.status && updates.status !== order.status;
+      const previousStatus = order.status;
+      
       const updatedOrder = {
         ...order,
         ...updates,
@@ -209,6 +240,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // If status changed, send webhook notification
+      if (statusChanged) {
+        const payload = createOrderStatusUpdatedPayload(
+          updatedOrder, 
+          previousStatus, 
+          user.name
+        );
+        await sendWebhookNotifications('status_atualizado', payload);
+      }
       
       toast.success('Order updated successfully');
       return updatedOrder;
@@ -259,9 +300,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         throw new Error('Can only delete orders with pending status');
       }
       
+      // Create a copy of the order before deleting
+      const deletedOrder = { ...order };
+      
       const updatedOrders = orders.filter(order => order.id !== id);
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // Send webhook notification for canceled order
+      const payload = createOrderCanceledPayload(deletedOrder, user.name);
+      await sendWebhookNotifications('pedido_cancelado', payload);
       
       toast.success('Order deleted successfully');
     } catch (error) {
