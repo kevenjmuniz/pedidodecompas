@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { Captcha } from './Captcha';
 
 type AuthMode = 'login' | 'register' | 'reset';
 
@@ -17,12 +18,20 @@ export const AuthForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   
   const { login, register, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if captcha is verified for login and register
+    if ((mode === 'login' || mode === 'register') && !isCaptchaVerified) {
+      toast.error('Por favor, verifique o captcha antes de continuar.');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -53,6 +62,7 @@ export const AuthForm: React.FC = () => {
     if (newMode === 'reset') {
       setPassword('');
     }
+    setIsCaptchaVerified(false);
   };
 
   return (
@@ -132,10 +142,15 @@ export const AuthForm: React.FC = () => {
               </div>
             )}
             
+            {/* Only show captcha for login and register, not for reset password */}
+            {(mode === 'login' || mode === 'register') && (
+              <Captcha onCaptchaVerified={setIsCaptchaVerified} />
+            )}
+            
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={isLoading || ((mode === 'login' || mode === 'register') && !isCaptchaVerified)}
             >
               {isLoading ? (
                 <span>Processando...</span>
