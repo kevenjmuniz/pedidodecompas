@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
@@ -99,7 +98,7 @@ const SAMPLE_ORDERS: Order[] = [
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { webhookUrl, webhookConfigs } = useSettings();
+  const { webhookConfigs } = useSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -146,19 +145,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       config.events.includes(event) && 
       (specificWebhook ? config.id === specificWebhook : true)
     );
-    
-    // For the legacy webhook URL (older version support)
-    if (webhookUrl && !specificWebhook) {
-      const legacyConfig: WebhookConfig = {
-        id: 'legacy',
-        url: webhookUrl,
-        name: 'Webhook Padrão (Legado)',
-        events: ['pedido_criado', 'status_atualizado', 'pedido_cancelado'],
-        enabled: true
-      };
-      
-      await sendWebhook(legacyConfig, payload);
-    }
     
     // Send to all eligible webhooks
     const promises = eligibleWebhooks.map(config => sendWebhook(config, payload));

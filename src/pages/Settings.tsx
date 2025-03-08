@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../context/SettingsContext';
@@ -9,6 +10,7 @@ import { WebhookConfig } from '../services/webhookService';
 import WebhookForm from '../components/webhooks/WebhookForm';
 import WebhookItem from '../components/webhooks/WebhookItem';
 import WebhookLogList from '../components/webhooks/WebhookLogList';
+import { toast } from 'sonner';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +29,8 @@ const Settings: React.FC = () => {
     saveWebhookConfig,
     deleteWebhookConfig,
     webhookLogs,
-    refreshWebhookLogs
+    refreshWebhookLogs,
+    testWebhook
   } = useSettings();
   
   const [showWebhookForm, setShowWebhookForm] = useState(false);

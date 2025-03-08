@@ -1,9 +1,6 @@
 
-// Note: This file is read-only but let's assume we need to create or update it
-// This is a mock representation of what the file should contain with left-aligned text
-
 import React, { useState } from 'react';
-import { WebhookConfig } from '../../services/webhookService';
+import { WebhookConfig, WebhookEvent } from '../../services/webhookService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +18,7 @@ const WebhookForm: React.FC<WebhookFormProps> = ({ initialData, onSave, onCancel
   const [name, setName] = useState(initialData?.name || '');
   const [url, setUrl] = useState(initialData?.url || '');
   const [enabled, setEnabled] = useState(initialData?.enabled !== false);
-  const [events, setEvents] = useState<string[]>(initialData?.events || ['pedido_criado']);
+  const [events, setEvents] = useState<WebhookEvent[]>(initialData?.events || ['pedido_criado']);
   const [headers, setHeaders] = useState<Record<string, string>>(
     initialData?.headers || {}
   );
@@ -48,7 +45,7 @@ const WebhookForm: React.FC<WebhookFormProps> = ({ initialData, onSave, onCancel
     setHeaders(newHeaders);
   };
   
-  const toggleEvent = (event: string) => {
+  const toggleEvent = (event: WebhookEvent) => {
     if (events.includes(event)) {
       setEvents(events.filter(e => e !== event));
     } else {
@@ -66,7 +63,7 @@ const WebhookForm: React.FC<WebhookFormProps> = ({ initialData, onSave, onCancel
       enabled,
       events,
       headers,
-      retryCount: initialData?.retryCount || 3
+      maxRetries: initialData?.maxRetries || 3
     });
   };
 

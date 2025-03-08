@@ -17,6 +17,7 @@ type SettingsContextType = {
   webhookLogs: WebhookLog[];
   refreshWebhookLogs: () => void;
   isLoading: boolean;
+  testWebhook: (webhook: WebhookConfig) => Promise<WebhookLog>;
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -95,7 +96,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteWebhookConfig,
         webhookLogs,
         refreshWebhookLogs,
-        isLoading
+        isLoading,
+        testWebhook
       }}
     >
       {children}

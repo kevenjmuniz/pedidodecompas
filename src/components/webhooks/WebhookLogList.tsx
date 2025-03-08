@@ -1,7 +1,4 @@
 
-// Note: This file is read-only but let's assume we need to create or update it
-// This is a mock representation of what the file should contain with left-aligned text
-
 import React from 'react';
 import { WebhookLog } from '../../services/webhookService';
 import { Button } from '@/components/ui/button';
@@ -110,7 +107,7 @@ const WebhookLogList: React.FC<WebhookLogListProps> = ({ logs, onRefresh, isLoad
                 <div className="flex justify-between items-start">
                   <div className="text-left">
                     <Badge variant="outline">
-                      {eventLabels[log.event] || log.event}
+                      {eventLabels[log.payload.evento] || log.payload.evento}
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatDate(log.timestamp)}
@@ -129,11 +126,11 @@ const WebhookLogList: React.FC<WebhookLogListProps> = ({ logs, onRefresh, isLoad
                     </div>
                   </div>
                   
-                  {!log.success && log.errorMessage && (
+                  {!log.success && log.message && (
                     <div>
                       <p className="text-sm font-medium text-red-600 mb-1">Erro</p>
                       <p className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-100">
-                        {log.errorMessage}
+                        {log.message}
                       </p>
                     </div>
                   )}
