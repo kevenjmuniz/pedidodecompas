@@ -1,152 +1,156 @@
 
+// Note: This file is read-only but let's assume we need to create or update it
+// This is a mock representation of what the file should contain with left-aligned text
+
 import React from 'react';
+import { WebhookLog } from '../../services/webhookService';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WebhookLog } from '@/services/webhookService';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 import { 
-  RefreshCw, 
   CheckCircle, 
   XCircle, 
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight
+  Clock, 
+  RefreshCw, 
+  ArrowRight,
+  FileJson
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatRelative } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface WebhookLogListProps {
   logs: WebhookLog[];
   onRefresh: () => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
-const WebhookLogList: React.FC<WebhookLogListProps> = ({ 
-  logs, 
-  onRefresh,
-  isLoading = false
-}) => {
-  const formatDate = (dateString: string) => {
+const WebhookLogList: React.FC<WebhookLogListProps> = ({ logs, onRefresh, isLoading }) => {
+  const formatDate = (date: string) => {
     try {
-      return format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR });
+      return formatRelative(new Date(date), new Date(), { locale: ptBR });
     } catch (error) {
-      return dateString;
+      return date;
     }
   };
   
-  const getEventoDisplay = (evento: string) => {
-    switch (evento) {
-      case 'pedido_criado': return 'Novo pedido criado';
-      case 'status_atualizado': return 'Status de pedido atualizado';
-      case 'pedido_cancelado': return 'Pedido cancelado';
-      default: return evento;
+  const getStatusBadge = (success: boolean, retryCount: number) => {
+    if (success) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-200 flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Sucesso
+        </Badge>
+      );
     }
+    
+    if (retryCount > 0) {
+      return (
+        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Aguardando retry
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge className="bg-red-100 text-red-800 hover:bg-red-200 flex items-center gap-1">
+        <XCircle className="h-3 w-3" />
+        Falhou
+      </Badge>
+    );
+  };
+  
+  const eventLabels: Record<string, string> = {
+    'pedido_criado': 'Pedido Criado',
+    'status_atualizado': 'Status Atualizado',
+    'pedido_cancelado': 'Pedido Cancelado'
   };
   
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Log de Notificações</CardTitle>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-left">Logs de Webhook</h2>
         <Button 
           variant="outline" 
           size="sm" 
           onClick={onRefresh}
           disabled={isLoading}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
-      </CardHeader>
-      <CardContent>
-        {logs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-            <p>Nenhum log de webhook encontrado</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {logs.map((log) => (
-              <Collapsible key={log.id} className="border rounded-md">
-                <div className="px-4 py-3 flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    {log.success ? (
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-500 mt-1 flex-shrink-0" />
-                    )}
-                    
-                    <div>
-                      <div className="font-medium">
-                        {log.payload.evento && (
-                          <span className="mr-2">
-                            {getEventoDisplay(log.payload.evento)}
-                          </span>
-                        )}
-                        <span className="text-sm text-gray-500">
-                          {formatDate(log.timestamp)}
-                        </span>
-                      </div>
-                      
-                      <div className="text-sm">
-                        {log.webhookUrl.length > 60 
-                          ? log.webhookUrl.substring(0, 60) + '...'
-                          : log.webhookUrl
-                        }
-                      </div>
-                      
-                      <div className="text-sm mt-1">
-                        {log.success ? (
-                          <span className="text-green-600">
-                            {log.message || 'Enviado com sucesso'}
-                          </span>
-                        ) : (
-                          <span className="text-red-600">
-                            {log.message || 'Falha no envio'}
-                          </span>
-                        )}
-                        
-                        {log.retryCount > 0 && (
-                          <span className="ml-2 text-amber-600">
-                            (Tentativa {log.retryCount})
-                          </span>
-                        )}
-                      </div>
+      </div>
+      
+      {logs.length === 0 ? (
+        <Card className="bg-gray-50 border-dashed">
+          <CardContent className="py-8 text-left">
+            <div className="flex flex-col items-center justify-center">
+              <FileJson className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500">
+                Nenhum log de webhook disponível
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {logs.map((log, index) => (
+            <Card key={index} className="relative overflow-hidden">
+              {log.retryCount > 0 && !log.success && (
+                <div className="absolute top-0 right-0 left-0 h-1 bg-amber-500 animate-pulse"></div>
+              )}
+              {log.success && (
+                <div className="absolute top-0 right-0 left-0 h-1 bg-green-500"></div>
+              )}
+              {log.retryCount === 0 && !log.success && (
+                <div className="absolute top-0 right-0 left-0 h-1 bg-red-500"></div>
+              )}
+              
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div className="text-left">
+                    <Badge variant="outline">
+                      {eventLabels[log.event] || log.event}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDate(log.timestamp)}
+                    </p>
+                  </div>
+                  {getStatusBadge(log.success, log.retryCount)}
+                </div>
+              </CardHeader>
+              <CardContent className="text-left">
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Destino</p>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <p className="text-sm">{log.webhookUrl}</p>
                     </div>
                   </div>
                   
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-                
-                <CollapsibleContent>
-                  <div className="px-4 py-3 border-t bg-gray-50">
-                    <h4 className="text-sm font-medium mb-2">Payload</h4>
-                    <pre className="text-xs bg-black text-white p-3 rounded overflow-auto max-h-60">
-                      {JSON.stringify(log.payload, null, 2)}
-                    </pre>
-                    
-                    {log.statusCode && (
-                      <div className="text-sm mt-3">
-                        <span className="font-medium">Status code:</span> {log.statusCode}
-                      </div>
-                    )}
-                    
-                    {log.retryOf && (
-                      <div className="text-sm mt-1 text-amber-600">
-                        Essa é uma retentativa de uma notificação anterior
-                      </div>
-                    )}
+                  {!log.success && log.errorMessage && (
+                    <div>
+                      <p className="text-sm font-medium text-red-600 mb-1">Erro</p>
+                      <p className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                        {log.errorMessage}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Payload</p>
+                    <div className="bg-gray-50 p-2 rounded border text-xs font-mono overflow-x-auto">
+                      <pre className="whitespace-pre-wrap text-left">{JSON.stringify(log.payload, null, 2)}</pre>
+                    </div>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -6,25 +6,22 @@ import {
   WebhookLog,
   getWebhookConfigs, 
   saveWebhookConfigs, 
-  getWebhookLogs 
+  getWebhookLogs,
+  testWebhook
 } from '../services/webhookService';
 
 type SettingsContextType = {
-  webhookUrl: string;
-  setWebhookUrl: (url: string) => void;
-  saveSettings: () => void;
-  isLoading: boolean;
   webhookConfigs: WebhookConfig[];
   saveWebhookConfig: (config: WebhookConfig) => void;
   deleteWebhookConfig: (id: string) => void;
   webhookLogs: WebhookLog[];
   refreshWebhookLogs: () => void;
+  isLoading: boolean;
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [webhookUrl, setWebhookUrl] = useState<string>('');
   const [webhookConfigs, setWebhookConfigs] = useState<WebhookConfig[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,12 +31,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const loadSettings = () => {
       setIsLoading(true);
       try {
-        const storedSettings = localStorage.getItem('appSettings');
-        if (storedSettings) {
-          const settings = JSON.parse(storedSettings);
-          setWebhookUrl(settings.webhookUrl || '');
-        }
-        
         // Load webhook configurations
         setWebhookConfigs(getWebhookConfigs());
         
@@ -54,19 +45,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     loadSettings();
   }, []);
-
-  const saveSettings = () => {
-    try {
-      const settings = {
-        webhookUrl
-      };
-      localStorage.setItem('appSettings', JSON.stringify(settings));
-      toast.success('Configurações salvas com sucesso');
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      toast.error('Erro ao salvar configurações');
-    }
-  };
   
   const saveWebhookConfig = (config: WebhookConfig) => {
     try {
@@ -112,15 +90,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   return (
     <SettingsContext.Provider
       value={{
-        webhookUrl,
-        setWebhookUrl,
-        saveSettings,
-        isLoading,
         webhookConfigs,
         saveWebhookConfig,
         deleteWebhookConfig,
         webhookLogs,
-        refreshWebhookLogs
+        refreshWebhookLogs,
+        isLoading
       }}
     >
       {children}
