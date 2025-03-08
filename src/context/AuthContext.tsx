@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await registerService(name, email, password);
+      refreshUsers();
     } catch (error) {
       throw error;
     } finally {

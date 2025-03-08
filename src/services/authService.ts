@@ -2,41 +2,20 @@
 import { User, AuthUser } from '../types/auth';
 import { toast } from 'sonner';
 
-// Initial mock users data
-const INITIAL_MOCK_USERS: AuthUser[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    password: 'admin123',
-    role: 'admin',
-  },
-  {
-    id: '2',
-    name: 'Regular User',
-    email: 'user@example.com',
-    password: 'user123',
-    role: 'user',
-  },
-];
-
 // Get all users from storage
 export const getStoredUsers = (): AuthUser[] => {
   const storedUsers = localStorage.getItem('users');
   
   if (storedUsers) {
-    return [...INITIAL_MOCK_USERS, ...JSON.parse(storedUsers)];
+    return JSON.parse(storedUsers);
   }
   
-  return INITIAL_MOCK_USERS;
+  return [];
 };
 
-// Store additional users (non-initial ones)
-export const storeAdditionalUsers = (allUsers: AuthUser[]): void => {
-  const additionalUsers = allUsers.filter(
-    u => !INITIAL_MOCK_USERS.some(initial => initial.id === u.id)
-  );
-  localStorage.setItem('users', JSON.stringify(additionalUsers));
+// Store users
+export const storeUsers = (users: AuthUser[]): void => {
+  localStorage.setItem('users', JSON.stringify(users));
 };
 
 // Login service
@@ -75,10 +54,27 @@ export const registerService = async (
   // Simulate API request delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
+  const currentUsers = getStoredUsers();
+  
   // Check if email already exists
-  if (getStoredUsers().some(u => u.email === email)) {
+  if (currentUsers.some(u => u.email === email)) {
     throw new Error('Email already in use');
   }
+  
+  // Create new user with admin role for the first user, otherwise regular user
+  const newUser: AuthUser = {
+    id: String(Date.now()),
+    name,
+    email,
+    password,
+    role: currentUsers.length === 0 ? 'admin' : 'user',
+  };
+  
+  // Add the new user
+  const updatedUsers = [...currentUsers, newUser];
+  
+  // Store all users
+  storeUsers(updatedUsers);
   
   toast.success('Registration successful! You can now login.');
 };
@@ -101,7 +97,7 @@ export const addUserService = async (
   }
 
   const newUser: AuthUser = {
-    id: String(currentUsers.length + 1),
+    id: String(Date.now()),
     name,
     email,
     password,
@@ -111,8 +107,8 @@ export const addUserService = async (
   // Add the new user
   const updatedUsers = [...currentUsers, newUser];
   
-  // Store the additional users
-  storeAdditionalUsers(updatedUsers);
+  // Store all users
+  storeUsers(updatedUsers);
   
   toast.success('User added successfully!');
 };
@@ -142,7 +138,7 @@ export const removeUserService = async (
   const updatedUsers = currentUsers.filter(u => u.id !== id);
   
   // Update localStorage
-  storeAdditionalUsers(updatedUsers);
+  storeUsers(updatedUsers);
   
   toast.success('Usuário removido com sucesso');
 };
@@ -171,7 +167,7 @@ export const changePasswordService = async (
   };
   
   // Update localStorage
-  storeAdditionalUsers(updatedUsers);
+  storeUsers(updatedUsers);
   
   toast.success('Senha alterada com sucesso');
 };

@@ -32,11 +32,11 @@ const Index: React.FC = () => {
           </p>
         </motion.div>
         
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md mb-12">
           <AuthForm />
         </div>
 
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6 w-full max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -177,12 +177,6 @@ export const AuthForm: React.FC = () => {
               </>
             )}
           </div>
-          
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Para teste, use:</p>
-            <p>Admin: admin@example.com / admin123</p>
-            <p>Usuário: user@example.com / user123</p>
-          </div>
         </CardFooter>
       </Card>
     </motion.div>
