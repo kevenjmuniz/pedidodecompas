@@ -185,7 +185,7 @@ const Settings: React.FC = () => {
                     webhook={webhook}
                     onEdit={handleEditWebhook}
                     onDelete={handleDeleteWebhook}
-                    onTest={handleTestWebhookItem}
+                    onTest={handleTestWebhook}
                     isTesting={testingWebhook === webhook.id}
                   />
                 ))}
