@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../context/SettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, FileText, Plus } from 'lucide-react';
+import { Globe, FileText, Plus, Moon, Sun, Clock } from 'lucide-react';
 import { WebhookConfig } from '../services/webhookService';
 import WebhookForm from '../components/webhooks/WebhookForm';
 import WebhookItem from '../components/webhooks/WebhookItem';
@@ -21,7 +21,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Settings: React.FC = () => {
   const { 
@@ -30,7 +33,10 @@ const Settings: React.FC = () => {
     deleteWebhookConfig,
     webhookLogs,
     refreshWebhookLogs,
-    testWebhook
+    testWebhook,
+    currentTime,
+    theme,
+    setTheme
   } = useSettings();
   
   const [showWebhookForm, setShowWebhookForm] = useState(false);
@@ -74,7 +80,7 @@ const Settings: React.FC = () => {
     setDeleteDialogOpen(false);
   };
   
-  const handleTestWebhookItem = async (webhook: WebhookConfig) => {
+  const handleTestWebhook = async (webhook: WebhookConfig) => {
     setTestingWebhook(webhook.id);
     
     try {
@@ -101,6 +107,13 @@ const Settings: React.FC = () => {
     }, 500);
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const formattedTime = format(currentTime, 'HH:mm:ss', { locale: ptBR });
+  const formattedDate = format(currentTime, 'dd/MM/yyyy', { locale: ptBR });
+
   return (
     <Layout>
       <motion.div
@@ -108,11 +121,30 @@ const Settings: React.FC = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Configurações</h1>
-          <p className="text-muted-foreground mt-1">
-            Configure as opções do sistema de pedidos
-          </p>
+        <div className="mb-6 flex justify-between items-center">
+          <div className="text-left">
+            <h1 className="text-2xl font-bold">Configurações</h1>
+            <p className="text-muted-foreground mt-1">
+              Configure as opções do sistema de pedidos
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex flex-col items-end mr-4">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-lg font-medium">{formattedTime}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{formattedDate}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Sun className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+              />
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
         </div>
 
         <Tabs defaultValue="webhooks" className="w-full">

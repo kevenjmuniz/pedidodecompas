@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 import { 
   WebhookConfig, 
   WebhookLog,
@@ -18,6 +19,9 @@ type SettingsContextType = {
   refreshWebhookLogs: () => void;
   isLoading: boolean;
   testWebhook: (webhook: WebhookConfig) => Promise<WebhookLog>;
+  currentTime: Date;
+  theme: string | undefined;
+  setTheme: (theme: string) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -26,6 +30,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [webhookConfigs, setWebhookConfigs] = useState<WebhookConfig[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const { theme, setTheme } = useTheme();
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   // Load settings from localStorage on component mount
   useEffect(() => {
@@ -97,7 +112,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         webhookLogs,
         refreshWebhookLogs,
         isLoading,
-        testWebhook
+        testWebhook,
+        currentTime,
+        theme,
+        setTheme
       }}
     >
       {children}
