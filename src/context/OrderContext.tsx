@@ -151,17 +151,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       // Send webhook notification for new order
       if (webhookUrl) {
-        sendWebhook(webhookUrl, {
+        const result = await sendWebhook(webhookUrl, {
           event: 'new_order',
           order: newOrder,
           timestamp: now
-        }).then(success => {
-          if (success) {
-            console.log('Webhook notification sent successfully');
-          } else {
-            console.warn('Failed to send webhook notification');
-          }
         });
+        
+        if (result.success) {
+          console.log('Webhook notification sent successfully');
+        } else {
+          console.warn('Failed to send webhook notification:', result.message);
+        }
       }
       
       toast.success('Order created successfully');

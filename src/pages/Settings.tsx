@@ -7,14 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Globe, RefreshCw } from 'lucide-react';
+import { Save, Globe, RefreshCw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { sendWebhook } from '../services/webhookService';
 
 const Settings: React.FC = () => {
   const { webhookUrl, setWebhookUrl, saveSettings, isLoading } = useSettings();
   const [localWebhookUrl, setLocalWebhookUrl] = useState(webhookUrl);
   const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState<{success?: boolean; message?: string} | null>(null);
 
   const handleSave = () => {
     setWebhookUrl(localWebhookUrl);
@@ -28,19 +30,29 @@ const Settings: React.FC = () => {
     }
 
     setTestLoading(true);
+    setTestResult(null);
+    
     try {
-      // Import dynamically to avoid circular dependencies
-      const { sendWebhook } = await import('../services/webhookService');
-      await sendWebhook(localWebhookUrl, {
+      const result = await sendWebhook(localWebhookUrl, {
         event: 'test',
         message: 'Teste de configuração do webhook',
         timestamp: new Date().toISOString(),
       });
       
-      toast.success('Webhook de teste enviado. Verifique a aplicação de destino.');
+      setTestResult(result);
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error('Error testing webhook:', error);
       toast.error('Erro ao testar o webhook');
+      setTestResult({
+        success: false,
+        message: 'Erro inesperado ao tentar testar o webhook'
+      });
     } finally {
       setTestLoading(false);
     }
@@ -89,6 +101,33 @@ const Settings: React.FC = () => {
                     Informe a URL do webhook que receberá notificações de novos pedidos
                   </p>
                 </div>
+                
+                {testResult && !testResult.success && (
+                  <div className="bg-red-50 p-3 rounded-md border border-red-200 flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">Erro no teste do webhook</p>
+                      <p className="text-sm text-red-700">{testResult.message}</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        Verifique se a URL está correta e se o serviço de webhook está disponível.
+                        O erro pode ser devido a restrições de CORS, firewall ou indisponibilidade do servidor.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {testResult && testResult.success && (
+                  <div className="bg-green-50 p-3 rounded-md border border-green-200 flex items-start gap-2">
+                    <Globe className="h-5 w-5 text-green-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Webhook testado com sucesso</p>
+                      <p className="text-sm text-green-700">{testResult.message}</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        O teste foi bem-sucedido. Verifique o serviço de webhook para confirmar se a mensagem chegou corretamente.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button 
