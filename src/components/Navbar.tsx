@@ -114,7 +114,8 @@ export const Navbar: React.FC = () => {
     {
       title: 'Configurações',
       href: '/settings',
-      icon: <Settings className="h-4 w-4 mr-2" />
+      icon: <Settings className="h-4 w-4 mr-2" />,
+      adminOnly: true
     }
   ];
 
@@ -177,12 +178,14 @@ export const Navbar: React.FC = () => {
                 Minha conta
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="cursor-pointer w-full">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
-                </Link>
-              </DropdownMenuItem>
+              {user.role === 'admin' && (
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer w-full">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair

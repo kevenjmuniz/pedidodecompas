@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useInventory } from '@/context/InventoryContext';
+import { useAuth } from '@/context/AuthContext';
 import { ProductForm } from '@/components/inventory/ProductForm';
 import { Button } from '@/components/ui/button';
 import { 
@@ -24,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Save, Trash, PlusCircle, MinusCircle } from 'lucide-react';
+import { ArrowLeft, Save, Trash, PlusCircle, MinusCircle, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -32,10 +33,12 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProduct, updateProduct, deleteProduct, updateStock } = useInventory();
+  const { user } = useAuth();
   const [stockAdjustment, setStockAdjustment] = useState<number>(1);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   
   const product = id ? getProduct(id) : undefined;
+  const isAdmin = user?.role === 'admin';
   
   useEffect(() => {
     if (id && !product) {
@@ -55,6 +58,11 @@ const ProductDetail = () => {
   }
 
   const handleStockUpdate = async (isAddition: boolean) => {
+    if (!isAdmin) {
+      toast.error('Você não tem permissão para alterar o estoque');
+      return;
+    }
+    
     if (stockAdjustment <= 0) {
       toast.error('A quantidade deve ser maior que zero');
       return;
@@ -68,6 +76,11 @@ const ProductDetail = () => {
   };
 
   const handleDelete = async () => {
+    if (!isAdmin) {
+      toast.error('Você não tem permissão para excluir produtos');
+      return;
+    }
+    
     try {
       await deleteProduct(product.id);
       navigate('/inventory');
@@ -92,7 +105,18 @@ const ProductDetail = () => {
           <h1 className="text-2xl font-bold">Detalhes do Produto</h1>
         </div>
 
-        {isEditing ? (
+        {!isAdmin && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
+            <div className="flex items-center">
+              <ShieldAlert className="h-5 w-5 text-yellow-500 mr-2" />
+              <p className="text-sm text-yellow-700">
+                Visualização apenas. Você não tem permissão para editar ou gerenciar este produto.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isEditing && isAdmin ? (
           <Card>
             <CardHeader>
               <CardTitle>Editar Produto</CardTitle>
@@ -153,12 +177,14 @@ const ProductDetail = () => {
                   <p className="text-gray-700">{product.description}</p>
                 </div>
                 
-                <div className="pt-4 mt-4 border-t">
-                  <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
-                    <Save className="mr-2 h-4 w-4" />
-                    Editar Produto
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="pt-4 mt-4 border-t">
+                    <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
+                      <Save className="mr-2 h-4 w-4" />
+                      Editar Produto
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -178,76 +204,80 @@ const ProductDetail = () => {
                     <span>{product.minimumStock}</span>
                   </div>
                   
-                  <div className="pt-4 mt-4 border-t">
-                    <div className="grid grid-cols-3 gap-4 items-center mb-4">
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => setStockAdjustment(prev => Math.max(1, prev - 1))}
-                      >
-                        <MinusCircle className="h-4 w-4" />
-                      </Button>
-                      <div className="text-center font-semibold">{stockAdjustment}</div>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => setStockAdjustment(prev => prev + 1)}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
+                  {isAdmin && (
+                    <div className="pt-4 mt-4 border-t">
+                      <div className="grid grid-cols-3 gap-4 items-center mb-4">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => setStockAdjustment(prev => Math.max(1, prev - 1))}
+                        >
+                          <MinusCircle className="h-4 w-4" />
+                        </Button>
+                        <div className="text-center font-semibold">{stockAdjustment}</div>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => setStockAdjustment(prev => prev + 1)}
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex flex-col space-y-3">
+                        <Button 
+                          onClick={() => handleStockUpdate(true)}
+                          className="w-full"
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Adicionar Estoque
+                        </Button>
+                        <Button 
+                          onClick={() => handleStockUpdate(false)}
+                          variant="secondary"
+                          className="w-full"
+                        >
+                          <MinusCircle className="mr-2 h-4 w-4" />
+                          Remover Estoque
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-col space-y-3">
-                      <Button 
-                        onClick={() => handleStockUpdate(true)}
-                        className="w-full"
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Estoque
-                      </Button>
-                      <Button 
-                        onClick={() => handleStockUpdate(false)}
-                        variant="secondary"
-                        className="w-full"
-                      >
-                        <MinusCircle className="mr-2 h-4 w-4" />
-                        Remover Estoque
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
               
-              <Card className="border-red-200">
-                <CardHeader>
-                  <CardTitle className="text-red-600">Zona de Perigo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" className="w-full">
-                        <Trash className="mr-2 h-4 w-4" />
-                        Excluir Produto
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o produto
-                          "{product.name}" do seu inventário.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardContent>
-              </Card>
+              {isAdmin && (
+                <Card className="border-red-200">
+                  <CardHeader>
+                    <CardTitle className="text-red-600">Zona de Perigo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                          <Trash className="mr-2 h-4 w-4" />
+                          Excluir Produto
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o produto
+                            "{product.name}" do seu inventário.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}

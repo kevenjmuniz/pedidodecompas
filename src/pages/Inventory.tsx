@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { useInventory, Product } from '@/context/InventoryContext';
+import { useAuth } from '@/context/AuthContext';
 import { ProductCard } from '@/components/inventory/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +20,13 @@ import { motion } from 'framer-motion';
 
 const Inventory = () => {
   const { products, isLoading, getLowStockProducts } = useInventory();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const navigate = useNavigate();
   
   const lowStockProducts = getLowStockProducts();
+  const isAdmin = user?.role === 'admin';
 
   // Get unique categories from products
   const categories = ['all', ...new Set(products.map(p => p.category))];
@@ -51,10 +54,12 @@ const Inventory = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
           <h1 className="text-3xl font-bold mb-4 md:mb-0">Inventário</h1>
           
-          <Button onClick={() => navigate('/inventory/new')} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Produto
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => navigate('/inventory/new')} className="w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Produto
+            </Button>
+          )}
         </div>
 
         {lowStockProducts.length > 0 && (
@@ -105,7 +110,7 @@ const Inventory = () => {
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -123,7 +128,7 @@ const Inventory = () => {
             ) : lowStockProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {lowStockProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (

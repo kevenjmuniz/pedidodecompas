@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useInventory } from '@/context/InventoryContext';
+import { useAuth } from '@/context/AuthContext';
 import { ProductForm } from '@/components/inventory/ProductForm';
 import { Button } from '@/components/ui/button';
 import { 
@@ -14,10 +15,25 @@ import {
 } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const NewProduct = () => {
   const navigate = useNavigate();
   const { addProduct } = useInventory();
+  const { user } = useAuth();
+  
+  // Check if user is admin, if not redirect to inventory
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      toast.error('Você não tem permissão para adicionar produtos');
+      navigate('/inventory');
+    }
+  }, [user, navigate]);
+
+  // If user is not admin, don't render the form
+  if (user?.role !== 'admin') {
+    return null;
+  }
 
   return (
     <Layout>
