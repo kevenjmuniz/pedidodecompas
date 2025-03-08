@@ -19,6 +19,7 @@ export const AuthForm: React.FC = () => {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
   
   const { login, register, resetPassword } = useAuth();
   const navigate = useNavigate();
@@ -26,10 +27,16 @@ export const AuthForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if captcha is verified for login and register
-    if ((mode === 'login' || mode === 'register') && !isCaptchaVerified) {
-      toast.error('Por favor, verifique o captcha antes de continuar.');
-      return;
+    if ((mode === 'login' || mode === 'register')) {
+      if (!showCaptcha) {
+        setShowCaptcha(true);
+        return;
+      }
+      
+      if (!isCaptchaVerified) {
+        toast.error('Por favor, verifique o captcha antes de continuar.');
+        return;
+      }
     }
     
     setIsLoading(true);
@@ -42,6 +49,9 @@ export const AuthForm: React.FC = () => {
         await register(name, email, password);
         setMode('login');
         toast.success('Conta criada com sucesso! Faça login para continuar.');
+        // Reset captcha state after successful registration
+        setShowCaptcha(false);
+        setIsCaptchaVerified(false);
       } else if (mode === 'reset') {
         await resetPassword(email);
         setMode('login');
@@ -63,6 +73,7 @@ export const AuthForm: React.FC = () => {
       setPassword('');
     }
     setIsCaptchaVerified(false);
+    setShowCaptcha(false);
   };
 
   return (
@@ -142,22 +153,22 @@ export const AuthForm: React.FC = () => {
               </div>
             )}
             
-            {/* Only show captcha for login and register, not for reset password */}
-            {(mode === 'login' || mode === 'register') && (
+            {/* Only show captcha for login and register after initial button click */}
+            {(mode === 'login' || mode === 'register') && showCaptcha && (
               <Captcha onCaptchaVerified={setIsCaptchaVerified} />
             )}
             
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || ((mode === 'login' || mode === 'register') && !isCaptchaVerified)}
+              disabled={isLoading || ((mode === 'login' || mode === 'register') && showCaptcha && !isCaptchaVerified)}
             >
               {isLoading ? (
                 <span>Processando...</span>
               ) : (
                 <>
-                  {mode === 'login' && 'Entrar'}
-                  {mode === 'register' && 'Criar Conta'}
+                  {mode === 'login' && (showCaptcha ? 'Entrar' : 'Continuar')}
+                  {mode === 'register' && (showCaptcha ? 'Criar Conta' : 'Continuar')}
                   {mode === 'reset' && 'Recuperar Senha'}
                 </>
               )}
