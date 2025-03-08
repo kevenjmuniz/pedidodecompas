@@ -49,14 +49,23 @@ export const UserManagement: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Check for pending users on mount and switch to pending tab if there are any
+  // Check for pending users and switch to pending tab
   useEffect(() => {
+    console.log("UserManagement component mounted, users:", users.length);
+    console.log("Pending users:", users.filter(u => u.status === 'pending').map(u => u.email));
+    
     const pendingUsers = users.filter(user => user.status === 'pending');
-    if (pendingUsers.length > 0 && activeTab === 'all') {
-      setActiveTab('pending');
-      toast.info(`${pendingUsers.length} usuário(s) aguardando aprovação`, {
-        icon: <Bell className="h-5 w-5" />,
-      });
+    if (pendingUsers.length > 0) {
+      // Only switch tabs if we're on the default 'all' tab
+      if (activeTab === 'all') {
+        setActiveTab('pending');
+        
+        // Show notification about pending users
+        toast.info(`${pendingUsers.length} usuário(s) aguardando aprovação`, {
+          icon: <Bell className="h-5 w-5" />,
+          duration: 5000,
+        });
+      }
     }
   }, [users]);
 
@@ -77,6 +86,8 @@ export const UserManagement: React.FC = () => {
   const pendingUsers = users.filter(user => user.status === 'pending');
   const approvedUsers = users.filter(user => user.status === 'approved');
   const rejectedUsers = users.filter(user => user.status === 'rejected');
+
+  console.log("Rendering with pending users:", pendingUsers.length);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,8 +140,10 @@ export const UserManagement: React.FC = () => {
     setIsLoading(true);
     try {
       await approveUser(id);
+      toast.success('Usuário aprovado com sucesso');
     } catch (error) {
       console.error(error);
+      toast.error('Erro ao aprovar usuário');
     } finally {
       setIsLoading(false);
     }
@@ -140,8 +153,10 @@ export const UserManagement: React.FC = () => {
     setIsLoading(true);
     try {
       await rejectUser(id);
+      toast.success('Usuário rejeitado com sucesso');
     } catch (error) {
       console.error(error);
+      toast.error('Erro ao rejeitar usuário');
     } finally {
       setIsLoading(false);
     }

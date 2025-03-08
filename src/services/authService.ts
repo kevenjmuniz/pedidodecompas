@@ -1,4 +1,3 @@
-
 import { User, AuthUser } from '../types/auth';
 import { toast } from 'sonner';
 import {
@@ -59,6 +58,8 @@ export const loginService = async (
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
   
   toast.success('Login realizado com sucesso');
+  
+  // Return user without password
   return userWithoutPassword;
 };
 
@@ -103,6 +104,9 @@ export const registerService = async (
   } else {
     toast.success('Registro realizado com sucesso! Aguardando aprovação do administrador.');
   }
+  
+  console.log('User registered:', newUser);
+  console.log('All users after registration:', updatedUsers);
 };
 
 // Add user service
@@ -235,7 +239,10 @@ export const resetPasswordService = async (email: string): Promise<void> => {
 
 // Get users without passwords
 export const getUsersWithoutPasswords = (): User[] => {
-  return getStoredUsers().map(({ password: _, ...rest }) => rest);
+  const users = getStoredUsers().map(({ password: _, ...rest }) => rest);
+  console.log('Getting users without passwords:', users.length);
+  console.log('Users with pending status:', users.filter(u => u.status === 'pending').length);
+  return users;
 };
 
 // Approve user
@@ -262,6 +269,8 @@ export const approveUserService = async (id: string): Promise<void> => {
   storeUsers(updatedUsers);
   
   toast.success('Usuário aprovado com sucesso');
+  console.log('User approved:', id);
+  console.log('All users after approval:', updatedUsers);
 };
 
 // Reject user
@@ -288,4 +297,6 @@ export const rejectUserService = async (id: string): Promise<void> => {
   storeUsers(updatedUsers);
   
   toast.success('Usuário rejeitado com sucesso');
+  console.log('User rejected:', id);
+  console.log('All users after rejection:', updatedUsers);
 };

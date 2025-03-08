@@ -37,7 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Refresh users list
   const refreshUsers = () => {
-    setUsers(getUsersWithoutPasswords());
+    const loadedUsers = getUsersWithoutPasswords();
+    console.log('Refreshing users, found:', loadedUsers.length, 'users');
+    console.log('Pending users:', loadedUsers.filter(u => u.status === 'pending').length);
+    setUsers(loadedUsers);
   };
 
   const login = async (email: string, password: string) => {
@@ -45,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const loggedInUser = await loginService(email, password);
       setUser(loggedInUser);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
       refreshUsers(); // Refresh users list after login
     } catch (error) {
       throw error;

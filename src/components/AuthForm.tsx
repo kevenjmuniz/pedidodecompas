@@ -1,254 +1,162 @@
-
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import { Captcha } from './Captcha';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ClockIcon } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-type AuthMode = 'login' | 'register' | 'reset' | 'pending';
+export function AuthForm() {
+  const { login, register, resetPassword } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'reset'>('login');
+  const [formError, setFormError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-export const AuthForm: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [showCaptcha, setShowCaptcha] = useState(false);
-  
-  const { login, register, resetPassword } = useAuth();
-  const navigate = useNavigate();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [captchaText, setCaptchaText] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     
-    if ((mode === 'login' || mode === 'register')) {
-      if (!showCaptcha) {
-        setShowCaptcha(true);
-        return;
-      }
-      
-      if (!isCaptchaVerified) {
-        toast.error('Por favor, verifique o captcha antes de continuar.');
-        return;
-      }
+    // Check if passwords match for registration
+    if (authMode === 'register' && password !== confirmPassword) {
+      setFormError('As senhas não coincidem');
+      return;
     }
     
     setIsLoading(true);
     
     try {
-      if (mode === 'login') {
+      if (authMode === 'login') {
         await login(email, password);
-        navigate('/dashboard');
-      } else if (mode === 'register') {
+      } else if (authMode === 'register') {
         await register(name, email, password);
-        setMode('pending');
-        // Reset captcha state after successful registration
-        setShowCaptcha(false);
-        setIsCaptchaVerified(false);
-      } else if (mode === 'reset') {
+        // Redirect to account created page instead of switching to login
+        navigate('/account-created');
+        return; // Return early to prevent form reset and mode change
+      } else if (authMode === 'reset') {
         await resetPassword(email);
-        setMode('login');
+        setAuthMode('login');
       }
+      
+      // Reset form
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (error: any) {
-      console.error(error);
-      // Check for pending approval error
-      if (error.message && error.message.includes('aguardando aprovação')) {
-        setMode('pending');
-      }
+      console.error('Auth error:', error);
+      setFormError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const switchMode = (newMode: AuthMode) => {
-    setMode(newMode);
-    // Reset form fields when switching modes
-    if (newMode === 'login' || newMode === 'reset') {
-      setName('');
-    }
-    if (newMode === 'reset') {
-      setPassword('');
-    }
-    setIsCaptchaVerified(false);
-    setShowCaptcha(false);
-  };
-
-  // Show pending approval message
-  if (mode === 'pending') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md mx-auto"
-      >
-        <Card className="glass-card overflow-hidden">
-          <CardHeader className="space-y-1 py-6">
-            <CardTitle className="text-center text-2xl font-medium">
-              Conta Criada
-            </CardTitle>
-            <CardDescription className="text-center">
-              Sua conta foi criada e está aguardando aprovação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert className="bg-yellow-50 border-yellow-200 mb-4">
-              <ClockIcon className="h-4 w-4 text-yellow-600" />
-              <AlertTitle className="text-yellow-800">Aguardando aprovação</AlertTitle>
-              <AlertDescription className="text-yellow-700">
-                Sua conta foi criada com sucesso, mas precisa ser aprovada por um administrador antes que você possa fazer login.
-                Você receberá uma notificação quando sua conta for aprovada.
-              </AlertDescription>
-            </Alert>
-            <Button 
-              className="w-full mt-4" 
-              onClick={() => switchMode('login')}
-            >
-              Voltar para o Login
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md mx-auto"
-    >
-      <Card className="glass-card overflow-hidden">
-        <CardHeader className="space-y-1 py-6">
-          <CardTitle className="text-center text-2xl font-medium">
-            {mode === 'login' && 'Acesso ao Sistema'}
-            {mode === 'register' && 'Criar Conta'}
-            {mode === 'reset' && 'Recuperar Senha'}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {mode === 'login' && 'Entre com suas credenciais para acessar o sistema'}
-            {mode === 'register' && 'Crie uma nova conta para acessar o sistema'}
-            {mode === 'reset' && 'Informe seu e-mail para recuperar sua senha'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'register' && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  placeholder="Digite seu nome completo"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+    <Card>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">
+          {authMode === 'login' ? 'Login' : authMode === 'register' ? 'Criar Conta' : 'Resetar Senha'}
+        </CardTitle>
+        <CardDescription>
+          {authMode === 'login'
+            ? 'Entre com seu e-mail e senha'
+            : authMode === 'register'
+            ? 'Crie uma nova conta'
+            : 'Insira seu e-mail para resetar sua senha'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <form onSubmit={handleSubmit}>
+          {authMode === 'register' && (
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nome</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="exemplo@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="name"
+                placeholder="Digite seu nome"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
-                disabled={isLoading}
               />
             </div>
-            
-            {mode !== 'reset' && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  {mode === 'login' && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="px-0 text-xs font-medium text-primary"
-                      type="button"
-                      onClick={() => switchMode('reset')}
-                    >
-                      Esqueceu a senha?
-                    </Button>
-                  )}
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={mode === 'login' ? "Digite sua senha" : "Crie uma senha segura"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-            
-            {/* Only show captcha for login and register after initial button click */}
-            {(mode === 'login' || mode === 'register') && showCaptcha && (
-              <Captcha onCaptchaVerified={setIsCaptchaVerified} />
-            )}
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading || ((mode === 'login' || mode === 'register') && showCaptcha && !isCaptchaVerified)}
-            >
-              {isLoading ? (
-                <span>Processando...</span>
-              ) : (
-                <>
-                  {mode === 'login' && (showCaptcha ? 'Entrar' : 'Continuar')}
-                  {mode === 'register' && (showCaptcha ? 'Criar Conta' : 'Continuar')}
-                  {mode === 'reset' && 'Recuperar Senha'}
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-0">
-          <div className="text-center text-sm text-muted-foreground">
-            {mode === 'login' ? (
-              <>
-                Não tem uma conta?{' '}
-                <Button
-                  variant="link"
-                  className="p-0 text-primary"
-                  type="button"
-                  onClick={() => switchMode('register')}
-                >
-                  Criar conta
-                </Button>
-              </>
-            ) : (
-              <>
-                Já tem uma conta?{' '}
-                <Button
-                  variant="link"
-                  className="p-0 text-primary"
-                  type="button"
-                  onClick={() => switchMode('login')}
-                >
-                  Fazer login
-                </Button>
-              </>
-            )}
+          )}
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              placeholder="seuemail@exemplo.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
-        </CardFooter>
-      </Card>
-    </motion.div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Senha</Label>
+            <Input
+              id="password"
+              placeholder="Senha"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {authMode === 'register' && (
+            <div className="grid gap-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                placeholder="Confirmar Senha"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+          {formError && (
+            <p className="text-red-500 text-sm">{formError}</p>
+          )}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading
+              ? 'Carregando ...'
+              : authMode === 'login'
+              ? 'Entrar'
+              : authMode === 'register'
+              ? 'Criar Conta'
+              : 'Resetar Senha'}
+          </Button>
+        </form>
+      </CardContent>
+      <CardFooter className="flex flex-col items-center text-xs">
+        {authMode === 'login' ? (
+          <>
+            <Link to="/register" className="hover:underline">
+              Criar uma conta
+            </Link>
+            <Link to="/reset-password" className="hover:underline">
+              Esqueceu sua senha?
+            </Link>
+          </>
+        ) : authMode === 'register' ? (
+          <Link to="/" className="hover:underline">
+            Já tem uma conta?
+          </Link>
+        ) : (
+          <Link to="/" className="hover:underline">
+            Voltar para o login
+          </Link>
+        )}
+      </CardFooter>
+    </Card>
   );
-};
+}
