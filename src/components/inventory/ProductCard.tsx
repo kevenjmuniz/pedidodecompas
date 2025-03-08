@@ -71,7 +71,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <Button 
           variant="secondary" 
           className="w-full"
-          onClick={() => navigate(`/inventory/${product.id}`)}
+          onClick={() => navigate(`/product/${product.id}`)}
         >
           <Edit className="mr-2 h-4 w-4" />
           Gerenciar
