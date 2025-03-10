@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
@@ -19,6 +20,12 @@ import {
   TabsList,
   TabsTrigger
 } from '@/components/ui/tabs';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle
+} from '@/components/ui/card';
 import {
   FileBox,
   Eye,
@@ -54,6 +61,17 @@ const OrdersList: React.FC = () => {
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
   }, [orders, statusFilter, filterOrdersByStatus, searchQuery]);
+
+  // Count orders by status
+  const statusCounts = React.useMemo(() => {
+    const counts = {
+      total: orders.length,
+      pendente: filterOrdersByStatus('pendente').length,
+      aguardando: filterOrdersByStatus('aguardando').length,
+      resolvido: filterOrdersByStatus('resolvido').length
+    };
+    return counts;
+  }, [orders, filterOrdersByStatus]);
 
   // Handle refresh action
   const handleRefresh = () => {
@@ -165,6 +183,87 @@ const OrdersList: React.FC = () => {
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Status summary cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total de Pedidos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  <FileBox className="h-5 w-5 text-primary" />
+                  <span className="text-2xl font-bold">{statusCounts.total}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <Card className="bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-yellow-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-md">Pendente</span>
+                  </div>
+                  <span className="text-2xl font-bold">{statusCounts.pendente}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <Card className="bg-gradient-to-br from-blue-500/5 to-sky-500/5 border border-blue-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Aguardando Compra</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-md">Aguardando Compra</span>
+                  </div>
+                  <span className="text-2xl font-bold">{statusCounts.aguardando}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
+            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 border border-green-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Resolvidos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-md">Resolvido</span>
+                  </div>
+                  <span className="text-2xl font-bold">{statusCounts.resolvido}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Search field */}
