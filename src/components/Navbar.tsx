@@ -15,7 +15,8 @@ import {
   Home,
   Clipboard,
   Package,
-  Settings
+  Settings,
+  Truck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -75,6 +76,11 @@ export const Navbar: React.FC = () => {
       title: 'Inventário',
       href: '/inventory',
       icon: <Package className="h-4 w-4 mr-2" />,
+    },
+    {
+      title: 'Fornecedores',
+      href: '/suppliers',
+      icon: <Truck className="h-4 w-4 mr-2" />,
     },
     {
       title: 'Configurações',
