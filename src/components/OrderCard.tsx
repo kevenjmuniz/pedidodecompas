@@ -58,7 +58,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, index }) => {
             <p className="text-xs">Por {order.createdByName}</p>
           </div>
           <Button variant="secondary" size="sm" asChild>
-            <Link to={`/order/${order.id}`}>
+            <Link to={`/orders/${order.id}`}>
               Detalhes
               <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
