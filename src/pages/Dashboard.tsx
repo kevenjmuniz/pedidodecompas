@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { OrderCard } from '../components/OrderCard';
-import { StatusBadge } from '../components/StatusBadge';
-import { useOrders, OrderStatus, Order } from '../context/OrderContext';
+import { useOrders, OrderStatus } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
+import { useInventory } from '../context/InventoryContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -22,14 +22,6 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,7 +30,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { 
-  Filter, 
   Plus, 
   RefreshCw, 
   FileBox, 
@@ -46,135 +37,90 @@ import {
   PackageOpen, 
   LayoutGrid,
   Package,
-  Search,
-  ArrowRight,
-  Eye,
-  LayoutList
+  AlertTriangle,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import LowStockAlerts from '../components/inventory/LowStockAlerts';
 
 const Dashboard: React.FC = () => {
-  const { orders, isLoading, filterOrdersByStatus } = useOrders();
+  const { orders, isLoading } = useOrders();
+  const { products } = useInventory();
   const { user } = useAuth();
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(undefined);
-  const [view, setView] = useState<'all' | 'mine'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('table');
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Filter orders based on status, view type and search query
-  const filteredOrders = React.useMemo(() => {
-    let result = statusFilter ? filterOrdersByStatus(statusFilter) : orders;
-    
-    // If not admin or "mine" view is selected, filter by user's orders
-    if (user?.role !== 'admin' || view === 'mine') {
-      result = result.filter(order => order.createdBy === user?.id);
-    }
-    
-    // Filter by search query (order ID)
-    if (searchQuery.trim()) {
-      result = result.filter(order => 
-        order.id.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    // Sort by most recent first
-    return [...result].sort((a, b) => 
-      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
-  }, [orders, statusFilter, view, user, filterOrdersByStatus, searchQuery]);
-
-  // Count orders by status
-  const statusCounts = React.useMemo(() => {
-    const counts = {
-      total: 0,
-      pendente: 0,
-      aguardando: 0,
-      resolvido: 0
-    };
-    
-    let ordersToCount = orders;
-    if (user?.role !== 'admin' || view === 'mine') {
-      ordersToCount = orders.filter(order => order.createdBy === user?.id);
-    }
-    
-    ordersToCount.forEach(order => {
-      counts.total++;
-      counts[order.status]++;
+  // Count of low stock items
+  const lowStockItems = products.filter(product => product.quantity <= product.minimumStock);
+  
+  // Prepare data for orders chart
+  const prepareOrderData = () => {
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(new Date(), 29 - i);
+      return {
+        date: format(date, 'dd/MM'),
+        pendente: 0,
+        aguardando: 0,
+        resolvido: 0
+      };
     });
     
-    return counts;
-  }, [orders, view, user]);
+    orders.forEach(order => {
+      const orderDate = new Date(order.createdAt);
+      const daysAgo = Math.floor((new Date().getTime() - orderDate.getTime()) / (1000 * 3600 * 24));
+      
+      if (daysAgo >= 0 && daysAgo < 30) {
+        const index = 29 - daysAgo;
+        last30Days[index][order.status] += 1;
+      }
+    });
+    
+    return last30Days;
+  };
+  
+  const chartData = prepareOrderData();
+  
+  // Get current month days for calendar view
+  const today = new Date();
+  const currentMonth = {
+    start: startOfMonth(today),
+    end: endOfMonth(today)
+  };
+  
+  const daysWithOrders = eachDayOfInterval(currentMonth).reduce((acc, day) => {
+    const hasOrders = orders.some(order => {
+      const orderDate = new Date(order.createdAt);
+      return (
+        orderDate.getDate() === day.getDate() &&
+        orderDate.getMonth() === day.getMonth() &&
+        orderDate.getFullYear() === day.getFullYear()
+      );
+    });
+    
+    if (hasOrders) {
+      acc.push(day);
+    }
+    
+    return acc;
+  }, [] as Date[]);
 
   // Handle refresh action
   const handleRefresh = () => {
     toast.success('Dados atualizados');
-  };
-
-  // Render order table
-  const renderOrderTable = (orders: Order[]) => {
-    if (orders.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <FileBox className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
-          <h3 className="mt-4 text-lg font-medium">Nenhum pedido encontrado</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Não há pedidos correspondentes aos filtros aplicados
-          </p>
-          <Button className="mt-4" size="sm" asChild>
-            <Link to="/orders/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Criar novo pedido
-            </Link>
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[250px]">Item</TableHead>
-              <TableHead>Departamento</TableHead>
-              <TableHead>Quantidade</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Criado em</TableHead>
-              <TableHead>Por</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((order) => {
-              const formattedDate = format(new Date(order.createdAt), 'dd/MM/yyyy', { locale: ptBR });
-              
-              return (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.name}</TableCell>
-                  <TableCell>{order.department}</TableCell>
-                  <TableCell>{order.quantity}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.status} />
-                  </TableCell>
-                  <TableCell>{formattedDate}</TableCell>
-                  <TableCell>{order.createdByName}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/orders/${order.id}`}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        Detalhes
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    );
   };
 
   return (
@@ -188,44 +134,11 @@ const Dashboard: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Gerencie seus pedidos de compra
+              Visão geral do sistema
             </p>
           </div>
           
           <div className="flex space-x-3 mt-4 md:mt-0">
-            {user?.role === 'admin' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <LayoutGrid className="mr-2 h-4 w-4" />
-                    {view === 'all' ? 'Todos' : 'Meus Pedidos'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Visualização</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setView('all')}>
-                    Todos os Pedidos
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setView('mine')}>
-                    Meus Pedidos
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setDisplayMode(prev => prev === 'cards' ? 'table' : 'cards')}
-            >
-              {displayMode === 'cards' ? 
-                <LayoutList className="mr-2 h-4 w-4" /> : 
-                <LayoutGrid className="mr-2 h-4 w-4" />
-              }
-              {displayMode === 'cards' ? 'Tabela' : 'Cards'}
-            </Button>
-            
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Atualizar
@@ -254,7 +167,7 @@ const Dashboard: React.FC = () => {
               <CardContent>
                 <div className="flex items-center space-x-2">
                   <FileBox className="h-5 w-5 text-primary" />
-                  <span className="text-2xl font-bold">{statusCounts.total}</span>
+                  <span className="text-2xl font-bold">{orders.length}</span>
                 </div>
               </CardContent>
             </Card>
@@ -271,8 +184,13 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
-                  <StatusBadge status="pendente" showIcon={false} />
-                  <span className="text-2xl font-bold">{statusCounts.pendente}</span>
+                  <Badge variant="outline" className="bg-yellow-100 border-yellow-400 text-yellow-700">
+                    <PackageOpen className="h-3 w-3 mr-1" />
+                    Pendente
+                  </Badge>
+                  <span className="text-2xl font-bold">
+                    {orders.filter(order => order.status === 'pendente').length}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -289,8 +207,13 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
-                  <StatusBadge status="aguardando" showIcon={false} />
-                  <span className="text-2xl font-bold">{statusCounts.aguardando}</span>
+                  <Badge variant="outline" className="bg-blue-100 border-blue-400 text-blue-700">
+                    <Package className="h-3 w-3 mr-1" />
+                    Aguardando
+                  </Badge>
+                  <span className="text-2xl font-bold">
+                    {orders.filter(order => order.status === 'aguardando').length}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -307,138 +230,111 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
-                  <StatusBadge status="resolvido" showIcon={false} />
-                  <span className="text-2xl font-bold">{statusCounts.resolvido}</span>
+                  <Badge variant="outline" className="bg-green-100 border-green-400 text-green-700">
+                    <PackageCheck className="h-3 w-3 mr-1" />
+                    Resolvido
+                  </Badge>
+                  <span className="text-2xl font-bold">
+                    {orders.filter(order => order.status === 'resolvido').length}
+                  </span>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
-        {/* Search field */}
-        <div className="relative mb-6">
-          <div className="flex items-center border rounded-md bg-background">
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-10 border-none"
-              placeholder="Buscar por número do pedido..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Orders Chart */}
+          <Card className="col-span-1 lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Evolução de Pedidos (Últimos 30 dias)</CardTitle>
+              <CardDescription>Visualize o histórico de pedidos por status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="pendente" fill="#f59e0b" name="Pendente" />
+                    <Bar dataKey="aguardando" fill="#3b82f6" name="Aguardando" />
+                    <Bar dataKey="resolvido" fill="#10b981" name="Resolvido" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Calendário de Pedidos</CardTitle>
+              <CardDescription>Pedidos por data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="rounded-md border pointer-events-auto"
+                modifiers={{
+                  hasOrder: daysWithOrders
+                }}
+                modifiersStyles={{
+                  hasOrder: { 
+                    backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+              {date && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium">
+                    {format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {orders.filter(order => {
+                      const orderDate = new Date(order.createdAt);
+                      return (
+                        orderDate.getDate() === date.getDate() &&
+                        orderDate.getMonth() === date.getMonth() &&
+                        orderDate.getFullYear() === date.getFullYear()
+                      );
+                    }).length} pedidos nesta data
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Filter tabs */}
-        <Tabs defaultValue="all" className="mb-6" onValueChange={(value) => {
-          if (value === 'all') {
-            setStatusFilter(undefined);
-          } else {
-            setStatusFilter(value as OrderStatus);
-          }
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="all" className="flex items-center">
-                <FileBox className="mr-2 h-4 w-4" />
-                Todos
-              </TabsTrigger>
-              <TabsTrigger value="pendente" className="flex items-center">
-                <PackageOpen className="mr-2 h-4 w-4" />
-                Pendentes
-              </TabsTrigger>
-              <TabsTrigger value="aguardando" className="flex items-center">
-                <Package className="mr-2 h-4 w-4" />
-                Aguardando
-              </TabsTrigger>
-              <TabsTrigger value="resolvido" className="flex items-center">
-                <PackageCheck className="mr-2 h-4 w-4" />
-                Resolvidos
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="all" className="mt-0">
-            {displayMode === 'cards' 
-              ? renderOrderList(filteredOrders, isLoading)
-              : isLoading 
-                ? renderLoadingState() 
-                : renderOrderTable(filteredOrders)
-            }
-          </TabsContent>
-          
-          <TabsContent value="pendente" className="mt-0">
-            {displayMode === 'cards' 
-              ? renderOrderList(filteredOrders, isLoading)
-              : isLoading 
-                ? renderLoadingState() 
-                : renderOrderTable(filteredOrders)
-            }
-          </TabsContent>
-          
-          <TabsContent value="aguardando" className="mt-0">
-            {displayMode === 'cards' 
-              ? renderOrderList(filteredOrders, isLoading)
-              : isLoading 
-                ? renderLoadingState() 
-                : renderOrderTable(filteredOrders)
-            }
-          </TabsContent>
-          
-          <TabsContent value="resolvido" className="mt-0">
-            {displayMode === 'cards' 
-              ? renderOrderList(filteredOrders, isLoading)
-              : isLoading 
-                ? renderLoadingState() 
-                : renderOrderTable(filteredOrders)
-            }
-          </TabsContent>
-        </Tabs>
+        {/* Low Stock Alerts */}
+        <div className="mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center">
+              <div className="flex-1">
+                <CardTitle>Alertas de Estoque Baixo</CardTitle>
+                <CardDescription>Produtos que precisam de reposição</CardDescription>
+              </div>
+              {lowStockItems.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {lowStockItems.length} {lowStockItems.length === 1 ? 'item' : 'itens'}
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              <LowStockAlerts />
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
     </Layout>
-  );
-};
-
-// Helper function to render loading state
-const renderLoadingState = () => {
-  return (
-    <div className="flex justify-center py-8">
-      <div className="animate-spin">
-        <RefreshCw className="h-8 w-8 text-muted-foreground" />
-      </div>
-    </div>
-  );
-};
-
-// Helper function to render order list
-const renderOrderList = (orders: any[], isLoading: boolean) => {
-  if (isLoading) {
-    return renderLoadingState();
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FileBox className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
-        <h3 className="mt-4 text-lg font-medium">Nenhum pedido encontrado</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Não há pedidos correspondentes aos filtros aplicados
-        </p>
-        <Button className="mt-4" size="sm" asChild>
-          <Link to="/orders/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Criar novo pedido
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {orders.map((order, index) => (
-        <OrderCard key={order.id} order={order} index={index} />
-      ))}
-    </div>
   );
 };
 
