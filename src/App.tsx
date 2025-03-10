@@ -42,6 +42,7 @@ function App() {
                     <Route path="/inventory" element={<Inventory />} />
                     <Route path="/inventory/new" element={<NewProduct />} />
                     <Route path="/inventory/:id" element={<ProductDetail />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/suppliers" element={<Suppliers />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/account-created" element={<AccountCreated />} />

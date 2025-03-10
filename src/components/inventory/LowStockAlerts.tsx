@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Eye, PackageCheck } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const LowStockAlerts: React.FC = () => {
@@ -74,7 +73,7 @@ const LowStockAlerts: React.FC = () => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(`/inventory/${product.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Detalhes
