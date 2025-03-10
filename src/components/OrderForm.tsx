@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrders, OrderStatus } from '../context/OrderContext';
@@ -105,11 +104,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       if (isEditing && initialData.id) {
         await updateOrder(initialData.id, formData);
         toast.success('Pedido atualizado com sucesso!');
-        navigate(`/order/${initialData.id}`);
+        navigate(`/orders/${initialData.id}`);
       } else {
         const newOrder = await createOrder(formData);
         toast.success('Pedido criado com sucesso!');
-        navigate(`/order/${newOrder.id}`);
+        navigate(`/orders/${newOrder.id}`);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao processar o pedido');

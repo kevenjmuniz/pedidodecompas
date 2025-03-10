@@ -3,25 +3,25 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { OrderCard } from '../components/OrderCard';
 import { StatusBadge } from '../components/StatusBadge';
-import { useOrders, OrderStatus } from '../context/OrderContext';
+import { useOrders, OrderStatus, Order } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@/components/ui/tabs';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -29,6 +29,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { 
   Filter, 
   Plus, 
@@ -38,9 +46,14 @@ import {
   PackageOpen, 
   LayoutGrid,
   Package,
-  Search
+  Search,
+  ArrowRight,
+  Eye,
+  LayoutList
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Dashboard: React.FC = () => {
   const { orders, isLoading, filterOrdersByStatus } = useOrders();
@@ -48,6 +61,7 @@ const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(undefined);
   const [view, setView] = useState<'all' | 'mine'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('table');
 
   // Filter orders based on status, view type and search query
   const filteredOrders = React.useMemo(() => {
@@ -98,6 +112,71 @@ const Dashboard: React.FC = () => {
     toast.success('Dados atualizados');
   };
 
+  // Render order table
+  const renderOrderTable = (orders: Order[]) => {
+    if (orders.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <FileBox className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
+          <h3 className="mt-4 text-lg font-medium">Nenhum pedido encontrado</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Não há pedidos correspondentes aos filtros aplicados
+          </p>
+          <Button className="mt-4" size="sm" asChild>
+            <Link to="/orders/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Criar novo pedido
+            </Link>
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[250px]">Item</TableHead>
+              <TableHead>Departamento</TableHead>
+              <TableHead>Quantidade</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Criado em</TableHead>
+              <TableHead>Por</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => {
+              const formattedDate = format(new Date(order.createdAt), 'dd/MM/yyyy', { locale: ptBR });
+              
+              return (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.name}</TableCell>
+                  <TableCell>{order.department}</TableCell>
+                  <TableCell>{order.quantity}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell>{formattedDate}</TableCell>
+                  <TableCell>{order.createdByName}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/orders/${order.id}`}>
+                        <Eye className="h-4 w-4 mr-1" />
+                        Detalhes
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <motion.div
@@ -135,13 +214,25 @@ const Dashboard: React.FC = () => {
               </DropdownMenu>
             )}
             
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setDisplayMode(prev => prev === 'cards' ? 'table' : 'cards')}
+            >
+              {displayMode === 'cards' ? 
+                <LayoutList className="mr-2 h-4 w-4" /> : 
+                <LayoutGrid className="mr-2 h-4 w-4" />
+              }
+              {displayMode === 'cards' ? 'Tabela' : 'Cards'}
+            </Button>
+            
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Atualizar
             </Button>
             
             <Button size="sm" asChild>
-              <Link to="/new-order">
+              <Link to="/orders/new">
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Pedido
               </Link>
@@ -267,19 +358,39 @@ const Dashboard: React.FC = () => {
           </div>
 
           <TabsContent value="all" className="mt-0">
-            {renderOrderList(filteredOrders, isLoading)}
+            {displayMode === 'cards' 
+              ? renderOrderList(filteredOrders, isLoading)
+              : isLoading 
+                ? renderLoadingState() 
+                : renderOrderTable(filteredOrders)
+            }
           </TabsContent>
           
           <TabsContent value="pendente" className="mt-0">
-            {renderOrderList(filteredOrders, isLoading)}
+            {displayMode === 'cards' 
+              ? renderOrderList(filteredOrders, isLoading)
+              : isLoading 
+                ? renderLoadingState() 
+                : renderOrderTable(filteredOrders)
+            }
           </TabsContent>
           
           <TabsContent value="aguardando" className="mt-0">
-            {renderOrderList(filteredOrders, isLoading)}
+            {displayMode === 'cards' 
+              ? renderOrderList(filteredOrders, isLoading)
+              : isLoading 
+                ? renderLoadingState() 
+                : renderOrderTable(filteredOrders)
+            }
           </TabsContent>
           
           <TabsContent value="resolvido" className="mt-0">
-            {renderOrderList(filteredOrders, isLoading)}
+            {displayMode === 'cards' 
+              ? renderOrderList(filteredOrders, isLoading)
+              : isLoading 
+                ? renderLoadingState() 
+                : renderOrderTable(filteredOrders)
+            }
           </TabsContent>
         </Tabs>
       </motion.div>
@@ -287,16 +398,21 @@ const Dashboard: React.FC = () => {
   );
 };
 
+// Helper function to render loading state
+const renderLoadingState = () => {
+  return (
+    <div className="flex justify-center py-8">
+      <div className="animate-spin">
+        <RefreshCw className="h-8 w-8 text-muted-foreground" />
+      </div>
+    </div>
+  );
+};
+
 // Helper function to render order list
 const renderOrderList = (orders: any[], isLoading: boolean) => {
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin">
-          <RefreshCw className="h-8 w-8 text-muted-foreground" />
-        </div>
-      </div>
-    );
+    return renderLoadingState();
   }
 
   if (orders.length === 0) {
@@ -308,7 +424,7 @@ const renderOrderList = (orders: any[], isLoading: boolean) => {
           Não há pedidos correspondentes aos filtros aplicados
         </p>
         <Button className="mt-4" size="sm" asChild>
-          <Link to="/new-order">
+          <Link to="/orders/new">
             <Plus className="mr-2 h-4 w-4" />
             Criar novo pedido
           </Link>
