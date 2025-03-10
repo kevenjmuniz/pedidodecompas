@@ -20,86 +20,68 @@ const Index: React.FC = () => {
 
   return (
     <Layout requireAuth={false}>
-      <div className="min-h-[80vh] flex flex-col items-center justify-center">
-        <motion.div
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-mcf-lightgray py-12 px-4 sm:px-6 lg:px-8">
+        <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md"
         >
-          <h1 className="text-4xl font-bold mb-2 text-mcf-orange">Sistema de Pedidos de Compra</h1>
-          <p className="text-xl text-mcf-gray max-w-lg mx-auto">
-            Plataforma eficiente para gerenciar suas solicitações de compra
-          </p>
+          <div className="text-center mb-10">
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-mcf-orange text-white text-2xl font-bold mb-6 shadow-lg"
+            >
+              P
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-3xl sm:text-4xl font-bold text-mcf-darkgray mb-3"
+            >
+              Sistema de <span className="text-mcf-orange">Pedidos</span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="text-mcf-gray max-w-sm mx-auto"
+            >
+              Gerencie suas solicitações de compra de forma eficiente
+            </motion.p>
+          </div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="bg-white shadow-xl rounded-2xl overflow-hidden"
+          >
+            <div className="p-6 sm:p-8">
+              <Alert className="mb-6 bg-blue-50 border-blue-100 rounded-xl shadow-sm">
+                <InfoIcon className="h-4 w-4 text-blue-500" />
+                <AlertTitle className="text-blue-700 font-medium">Aprovação Necessária</AlertTitle>
+                <AlertDescription className="text-blue-600 text-sm">
+                  Novas contas precisam de aprovação de um administrador antes de acessar o sistema.
+                </AlertDescription>
+              </Alert>
+              
+              <AuthForm />
+            </div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+            className="mt-12 text-center"
+          >
+            <p className="text-mcf-gray text-sm">© {new Date().getFullYear()} - Sistema de Pedidos de Compra</p>
+          </motion.div>
         </motion.div>
-        
-        <div className="w-full max-w-md mb-4">
-          <Alert className="mb-4 bg-blue-50 border-blue-200">
-            <InfoIcon className="h-4 w-4 text-blue-600" />
-            <AlertTitle className="text-blue-800">Aprovação Necessária</AlertTitle>
-            <AlertDescription className="text-blue-700">
-              Novas contas precisam de aprovação de um administrador antes de acessar o sistema.
-            </AlertDescription>
-          </Alert>
-        </div>
-        
-        <div className="w-full max-w-md mb-12">
-          <AuthForm />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="mcf-card"
-          >
-            <div className="mcf-icon-container">⭐</div>
-            <h3 className="font-title font-bold text-mcf-orange mb-2">Experiência</h3>
-            <p className="text-sm text-mcf-gray">
-              Sistema completo para gerenciamento de pedidos de compra com ampla experiência no setor.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="mcf-card"
-          >
-            <div className="mcf-icon-container">👥</div>
-            <h3 className="font-title font-bold text-mcf-orange mb-2">Equipe</h3>
-            <p className="text-sm text-mcf-gray">
-              Equipe altamente capacitada oferece soluções para impulsionar seu negócio.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-            className="mcf-card"
-          >
-            <div className="mcf-icon-container">📋</div>
-            <h3 className="font-title font-bold text-mcf-orange mb-2">Portfólio</h3>
-            <p className="text-sm text-mcf-gray">
-              Nosso portfólio diversificado abrange desde consultoria até implementação de infraestrutura.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-            className="mcf-card"
-          >
-            <div className="mcf-icon-container">📈</div>
-            <h3 className="font-title font-bold text-mcf-orange mb-2">Objetivo</h3>
-            <p className="text-sm text-mcf-gray">
-              Nosso objetivo é colaborar de perto com nossos clientes, entendendo suas necessidades.
-            </p>
-          </motion.div>
-        </div>
       </div>
     </Layout>
   );

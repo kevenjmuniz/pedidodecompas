@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { At, Eye, EyeOff, Lock, User, ArrowRight } from 'lucide-react';
 
 export function AuthForm() {
   const { login, register, resetPassword } = useAuth();
@@ -19,6 +21,8 @@ export function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,120 +62,205 @@ export function AuthForm() {
     }
   };
 
+  const getFormTitle = () => {
+    switch (authMode) {
+      case 'login': return 'Entrar no Sistema';
+      case 'register': return 'Criar Conta';
+      case 'reset': return 'Recuperar Senha';
+    }
+  };
+
+  const getFormDescription = () => {
+    switch (authMode) {
+      case 'login': return 'Entre com suas credenciais para acessar';
+      case 'register': return 'Preencha os dados para criar uma nova conta';
+      case 'reset': return 'Informe seu email para redefinir a senha';
+    }
+  };
+
+  const variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">
-          {authMode === 'login' ? 'Login' : authMode === 'register' ? 'Criar Conta' : 'Resetar Senha'}
-        </CardTitle>
-        <CardDescription>
-          {authMode === 'login'
-            ? 'Entre com seu e-mail e senha'
-            : authMode === 'register'
-            ? 'Crie uma nova conta'
-            : 'Insira seu e-mail para resetar sua senha'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <form onSubmit={handleSubmit}>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={variants}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold tracking-tight text-mcf-darkgray">
+            {getFormTitle()}
+          </h2>
+          <p className="text-sm text-mcf-gray">
+            {getFormDescription()}
+          </p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           {authMode === 'register' && (
-            <div className="grid gap-2">
-              <Label htmlFor="name">Nome</Label>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Nome completo
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <User size={18} />
+                </div>
+                <Input
+                  id="name"
+                  placeholder="Digite seu nome completo"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
+                  required
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <At size={18} />
+              </div>
               <Input
-                id="name"
-                placeholder="Digite seu nome"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="email"
+                placeholder="seuemail@exemplo.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
                 required
               />
             </div>
-          )}
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder="seuemail@exemplo.com"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              placeholder="Senha"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          {authMode === 'register' && (
-            <div className="grid gap-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <Input
-                id="confirmPassword"
-                placeholder="Confirmar Senha"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+          
+          {authMode !== 'reset' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Senha
+                </Label>
+                {authMode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('reset')}
+                    className="text-xs text-mcf-blue hover:underline focus:outline-none"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Lock size={18} />
+                </div>
+                <Input
+                  id="password"
+                  placeholder="Sua senha"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           )}
+          
+          {authMode === 'register' && (
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                Confirmar Senha
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Lock size={18} />
+                </div>
+                <Input
+                  id="confirmPassword"
+                  placeholder="Confirme sua senha"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10 pr-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+          )}
+          
           {formError && (
-            <p className="text-red-500 text-sm">{formError}</p>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {formError}
+            </div>
           )}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading
-              ? 'Carregando ...'
-              : authMode === 'login'
-              ? 'Entrar'
-              : authMode === 'register'
-              ? 'Criar Conta'
-              : 'Resetar Senha'}
+          
+          <Button 
+            type="submit" 
+            className="w-full bg-mcf-orange hover:bg-mcf-orange/90 text-white font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 mt-2"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              "Processando..."
+            ) : (
+              <>
+                {authMode === 'login' ? 'Entrar' : authMode === 'register' ? 'Criar Conta' : 'Enviar Email'}
+                <ArrowRight size={18} />
+              </>
+            )}
           </Button>
         </form>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2 items-center text-xs">
-        {authMode === 'login' ? (
-          <>
-            <Button 
-              variant="link" 
+        
+        <div className="relative py-3">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-white px-4 text-sm text-gray-500">ou</span>
+          </div>
+        </div>
+        
+        <div className="text-center">
+          {authMode === 'login' ? (
+            <button 
               onClick={() => setAuthMode('register')} 
-              className="hover:underline"
+              className="text-mcf-blue hover:text-mcf-blue/80 text-sm font-medium hover:underline transition-colors"
             >
-              Criar uma conta
-            </Button>
-            <Button 
-              variant="link" 
-              onClick={() => setAuthMode('reset')} 
-              className="hover:underline"
+              Não tem uma conta? Cadastre-se
+            </button>
+          ) : (
+            <button 
+              onClick={() => setAuthMode('login')} 
+              className="text-mcf-blue hover:text-mcf-blue/80 text-sm font-medium hover:underline transition-colors"
             >
-              Esqueceu sua senha?
-            </Button>
-          </>
-        ) : authMode === 'register' ? (
-          <Button 
-            variant="link" 
-            onClick={() => setAuthMode('login')} 
-            className="hover:underline"
-          >
-            Já tem uma conta?
-          </Button>
-        ) : (
-          <Button 
-            variant="link" 
-            onClick={() => setAuthMode('login')} 
-            className="hover:underline"
-          >
-            Voltar para o login
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+              Já tem uma conta? Entre aqui
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
