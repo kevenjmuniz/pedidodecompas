@@ -3,28 +3,15 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import {
-  User,
-  LogOut,
   Home,
   Clipboard,
   Package,
@@ -72,22 +59,8 @@ type NavItem = {
 };
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
 
   const navItems: NavItem[] = [
     {
@@ -115,7 +88,6 @@ export const Navbar: React.FC = () => {
       title: 'Configurações',
       href: '/settings',
       icon: <Settings className="h-4 w-4 mr-2" />,
-      adminOnly: true
     }
   ];
 
@@ -156,42 +128,6 @@ export const Navbar: React.FC = () => {
                 ))}
             </NavigationMenuList>
           </NavigationMenu>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="hidden md:block text-sm font-medium mr-2">
-            {user.name}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
-                  <AvatarFallback>
-                    {user.name ? getInitials(user.name) : 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                Minha conta
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {user.role === 'admin' && (
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="cursor-pointer w-full">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configurações
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </header>
