@@ -24,7 +24,7 @@ const Inventory = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const navigate = useNavigate();
   
   const lowStockProducts = getLowStockProducts();
@@ -44,6 +44,10 @@ const Inventory = () => {
     
     return matchesSearch && matchesCategory;
   });
+
+  const handleEditProduct = (product: Product) => {
+    navigate(`/inventory/edit/${product.id}`);
+  };
 
   return (
     <Layout>
@@ -136,7 +140,11 @@ const Inventory = () => {
                   ))}
                 </div>
               ) : (
-                <ProductsTable products={filteredProducts} isAdmin={isAdmin} />
+                <ProductsTable 
+                  products={filteredProducts} 
+                  isAdmin={isAdmin} 
+                  onEdit={isAdmin ? handleEditProduct : undefined}
+                />
               )
             ) : (
               <div className="text-center py-10">
@@ -158,7 +166,11 @@ const Inventory = () => {
                   ))}
                 </div>
               ) : (
-                <ProductsTable products={lowStockProducts} isAdmin={isAdmin} />
+                <ProductsTable 
+                  products={lowStockProducts} 
+                  isAdmin={isAdmin} 
+                  onEdit={isAdmin ? handleEditProduct : undefined}
+                />
               )
             ) : (
               <div className="text-center py-10">
