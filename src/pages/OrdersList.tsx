@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
@@ -43,10 +42,10 @@ const OrdersList: React.FC = () => {
   const filteredOrders = React.useMemo(() => {
     let result = statusFilter ? filterOrdersByStatus(statusFilter) : orders;
     
-    // Filter by search query (order name)
+    // Filter by search query (order ID)
     if (searchQuery.trim()) {
       result = result.filter(order => 
-        order.name.toLowerCase().includes(searchQuery.toLowerCase())
+        order.id.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -174,7 +173,7 @@ const OrdersList: React.FC = () => {
             <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-10 border-none"
-              placeholder="Buscar por nome do item..."
+              placeholder="Buscar por número de pedido..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
