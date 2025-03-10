@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils';
 import {
   Home,
   Clipboard,
-  Package
+  Package,
+  Settings
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -74,6 +75,11 @@ export const Navbar: React.FC = () => {
       title: 'Inventário',
       href: '/inventory',
       icon: <Package className="h-4 w-4 mr-2" />,
+    },
+    {
+      title: 'Configurações',
+      href: '/settings',
+      icon: <Settings className="h-4 w-4 mr-2" />,
     }
   ];
 
