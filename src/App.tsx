@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import NewOrder from './pages/NewOrder';
 import OrderDetail from './pages/OrderDetail';
 import EditOrder from './pages/EditOrder';
+import OrdersList from './pages/OrdersList';
 import Inventory from './pages/Inventory';
 import NewProduct from './pages/NewProduct';
 import ProductDetail from './pages/ProductDetail';
@@ -31,6 +32,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/orders" element={<OrdersList />} />
                   <Route path="/orders/new" element={<NewOrder />} />
                   <Route path="/orders/:id" element={<OrderDetail />} />
                   <Route path="/orders/:id/edit" element={<EditOrder />} />

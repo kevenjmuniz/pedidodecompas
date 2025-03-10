@@ -68,7 +68,7 @@ export const Navbar: React.FC = () => {
     },
     {
       title: 'Pedidos',
-      href: '/orders/new',
+      href: '/orders',
       icon: <Clipboard className="h-4 w-4 mr-2" />,
     },
     {
