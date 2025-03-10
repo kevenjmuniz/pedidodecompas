@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { At, Eye, EyeOff, Lock, User, ArrowRight } from 'lucide-react';
+import { AtSign, Eye, EyeOff, Lock, User, ArrowRight } from 'lucide-react';
 
 export function AuthForm() {
   const { login, register, resetPassword } = useAuth();
@@ -28,7 +27,6 @@ export function AuthForm() {
     e.preventDefault();
     setFormError(null);
     
-    // Check if passwords match for registration
     if (authMode === 'register' && password !== confirmPassword) {
       setFormError('As senhas não coincidem');
       return;
@@ -41,15 +39,13 @@ export function AuthForm() {
         await login(email, password);
       } else if (authMode === 'register') {
         await register(name, email, password);
-        // Redirect to account created page instead of switching to login
         navigate('/account-created');
-        return; // Return early to prevent form reset and mode change
+        return;
       } else if (authMode === 'reset') {
         await resetPassword(email);
         setAuthMode('login');
       }
       
-      // Reset form
       setName('');
       setEmail('');
       setPassword('');
@@ -129,7 +125,7 @@ export function AuthForm() {
             </Label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                <At size={18} />
+                <AtSign size={18} />
               </div>
               <Input
                 id="email"
