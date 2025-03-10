@@ -14,15 +14,17 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Grid, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ProductsTable } from '@/components/inventory/ProductsTable';
 
 const Inventory = () => {
   const { products, isLoading, getLowStockProducts } = useInventory();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const navigate = useNavigate();
   
   const lowStockProducts = getLowStockProducts();
@@ -74,10 +76,29 @@ const Inventory = () => {
         )}
 
         <Tabs defaultValue="all" className="w-full mb-6">
-          <TabsList className="w-full max-w-md mx-auto">
-            <TabsTrigger value="all" className="flex-1">Todos</TabsTrigger>
-            <TabsTrigger value="low-stock" className="flex-1">Estoque Baixo</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center mb-4">
+            <TabsList className="max-w-md">
+              <TabsTrigger value="all" className="px-4">Todos</TabsTrigger>
+              <TabsTrigger value="low-stock" className="px-4">Estoque Baixo</TabsTrigger>
+            </TabsList>
+            
+            <div className="flex space-x-2">
+              <Button 
+                variant={viewMode === 'grid' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'table' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 my-6">
             <div className="relative flex-1">
@@ -108,11 +129,15 @@ const Inventory = () => {
             {isLoading ? (
               <div className="text-center py-10">Carregando produtos...</div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
-                ))}
-              </div>
+              viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map(product => (
+                    <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
+                  ))}
+                </div>
+              ) : (
+                <ProductsTable products={filteredProducts} isAdmin={isAdmin} />
+              )
             ) : (
               <div className="text-center py-10">
                 {search || category !== 'all' 
@@ -126,11 +151,15 @@ const Inventory = () => {
             {isLoading ? (
               <div className="text-center py-10">Carregando produtos...</div>
             ) : lowStockProducts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {lowStockProducts.map(product => (
-                  <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
-                ))}
-              </div>
+              viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {lowStockProducts.map(product => (
+                    <ProductCard key={product.id} product={product} isAdmin={isAdmin} />
+                  ))}
+                </div>
+              ) : (
+                <ProductsTable products={lowStockProducts} isAdmin={isAdmin} />
+              )
             ) : (
               <div className="text-center py-10">
                 Não há produtos com estoque baixo.
