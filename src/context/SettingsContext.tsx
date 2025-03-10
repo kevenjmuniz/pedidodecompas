@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
+import { useTheme } from '../components/ui/theme-provider';
 import { 
   WebhookConfig, 
   WebhookLog,
