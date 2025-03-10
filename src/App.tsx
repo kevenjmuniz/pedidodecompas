@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './components/ui/theme-provider';
@@ -11,7 +12,6 @@ import Inventory from './pages/Inventory';
 import NewProduct from './pages/NewProduct';
 import ProductDetail from './pages/ProductDetail';
 import Settings from './pages/Settings';
-import UserManagementPage from './pages/UserManagement';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { OrderProvider } from './context/OrderContext';
@@ -38,7 +38,6 @@ function App() {
                   <Route path="/inventory/new" element={<NewProduct />} />
                   <Route path="/inventory/:id" element={<ProductDetail />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/users" element={<UserManagementPage />} />
                   <Route path="/account-created" element={<AccountCreated />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
