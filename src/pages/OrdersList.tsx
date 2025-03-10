@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { StatusBadge } from '../components/StatusBadge';
 import { useOrders, OrderStatus, Order } from '../context/OrderContext';
+import { OrderCard } from '../components/OrderCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,16 +35,38 @@ import {
   PackageCheck,
   RefreshCw,
   Plus,
-  Search
+  Search,
+  LayoutGrid,
+  ListChecks,
+  Table2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle
+} from "@/components/ui/navigation-menu";
+
+// View type for toggling between different views
+type ViewType = 'table' | 'todos' | 'cards';
 
 const OrdersList: React.FC = () => {
   const { orders, isLoading, filterOrdersByStatus } = useOrders();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewType, setViewType] = useState<ViewType>('table'); // Default to table view
 
   // Filter orders based on status and search query
   const filteredOrders = React.useMemo(() => {
@@ -79,24 +102,69 @@ const OrdersList: React.FC = () => {
     console.log("Refreshing orders");
   };
 
+  // Todo list view
+  const renderTodoList = (orders: Order[]) => {
+    if (orders.length === 0) {
+      return renderEmptyState();
+    }
+
+    return (
+      <div className="space-y-2">
+        {orders.map((order, index) => (
+          <motion.div
+            key={order.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <Card className="hover:shadow-md transition-all">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <StatusBadge status={order.status} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium">{order.name}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {order.department} • {order.quantity} item(s) • {format(new Date(order.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to={`/orders/${order.id}`}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Detalhes
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  // Cards view
+  const renderCardsView = (orders: Order[]) => {
+    if (orders.length === 0) {
+      return renderEmptyState();
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {orders.map((order, index) => (
+          <OrderCard key={order.id} order={order} index={index} />
+        ))}
+      </div>
+    );
+  };
+
   // Render order table
   const renderOrderTable = (orders: Order[]) => {
     if (orders.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <FileBox className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
-          <h3 className="mt-4 text-lg font-medium">Nenhum pedido encontrado</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Não há pedidos correspondentes aos filtros aplicados
-          </p>
-          <Button className="mt-4" size="sm" asChild>
-            <Link to="/orders/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Criar novo pedido
-            </Link>
-          </Button>
-        </div>
-      );
+      return renderEmptyState();
     }
 
     return (
@@ -144,6 +212,25 @@ const OrdersList: React.FC = () => {
     );
   };
 
+  // Empty state
+  const renderEmptyState = () => {
+    return (
+      <div className="text-center py-12">
+        <FileBox className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
+        <h3 className="mt-4 text-lg font-medium">Nenhum pedido encontrado</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Não há pedidos correspondentes aos filtros aplicados
+        </p>
+        <Button className="mt-4" size="sm" asChild>
+          <Link to="/orders/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Criar novo pedido
+          </Link>
+        </Button>
+      </div>
+    );
+  };
+
   // Helper function to render loading state
   const renderLoadingState = () => {
     return (
@@ -153,6 +240,23 @@ const OrdersList: React.FC = () => {
         </div>
       </div>
     );
+  };
+
+  // Render content based on the view type and loading state
+  const renderContent = () => {
+    if (isLoading) {
+      return renderLoadingState();
+    }
+
+    switch (viewType) {
+      case 'todos':
+        return renderTodoList(filteredOrders);
+      case 'cards':
+        return renderCardsView(filteredOrders);
+      case 'table':
+      default:
+        return renderOrderTable(filteredOrders);
+    }
   };
 
   return (
@@ -266,16 +370,59 @@ const OrdersList: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Search field */}
-        <div className="relative mb-6">
-          <div className="flex items-center border rounded-md bg-background">
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-10 border-none"
-              placeholder="Buscar por número de pedido..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
+          {/* Search field */}
+          <div className="relative w-full md:w-64">
+            <div className="flex items-center border rounded-md bg-background">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-10 border-none"
+                placeholder="Buscar por número de pedido..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* View type toggle */}
+          <div className="flex items-center space-x-2">
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>
+                    {viewType === 'table' && <Table2 className="h-4 w-4 mr-2" />}
+                    {viewType === 'todos' && <ListChecks className="h-4 w-4 mr-2" />}
+                    {viewType === 'cards' && <LayoutGrid className="h-4 w-4 mr-2" />}
+                    Visualização
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid gap-3 p-4 w-[200px]">
+                      <div 
+                        className={`flex items-center space-x-2 rounded-md p-2 cursor-pointer ${viewType === 'table' ? 'bg-accent' : 'hover:bg-muted'}`}
+                        onClick={() => setViewType('table')}
+                      >
+                        <Table2 className="h-4 w-4" />
+                        <span>Tabela</span>
+                      </div>
+                      <div 
+                        className={`flex items-center space-x-2 rounded-md p-2 cursor-pointer ${viewType === 'todos' ? 'bg-accent' : 'hover:bg-muted'}`}
+                        onClick={() => setViewType('todos')}
+                      >
+                        <ListChecks className="h-4 w-4" />
+                        <span>Todos</span>
+                      </div>
+                      <div 
+                        className={`flex items-center space-x-2 rounded-md p-2 cursor-pointer ${viewType === 'cards' ? 'bg-accent' : 'hover:bg-muted'}`}
+                        onClick={() => setViewType('cards')}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                        <span>Cards</span>
+                      </div>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
         </div>
 
@@ -309,19 +456,19 @@ const OrdersList: React.FC = () => {
           </div>
 
           <TabsContent value="all" className="mt-0">
-            {isLoading ? renderLoadingState() : renderOrderTable(filteredOrders)}
+            {renderContent()}
           </TabsContent>
           
           <TabsContent value="pendente" className="mt-0">
-            {isLoading ? renderLoadingState() : renderOrderTable(filteredOrders)}
+            {renderContent()}
           </TabsContent>
           
           <TabsContent value="aguardando" className="mt-0">
-            {isLoading ? renderLoadingState() : renderOrderTable(filteredOrders)}
+            {renderContent()}
           </TabsContent>
           
           <TabsContent value="resolvido" className="mt-0">
-            {isLoading ? renderLoadingState() : renderOrderTable(filteredOrders)}
+            {renderContent()}
           </TabsContent>
         </Tabs>
       </motion.div>
