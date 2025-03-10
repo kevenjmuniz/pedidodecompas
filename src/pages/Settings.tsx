@@ -16,12 +16,14 @@ import {
   Clock, 
   User, 
   LogOut, 
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Users
 } from 'lucide-react';
 import { WebhookConfig } from '../services/webhookService';
 import WebhookForm from '../components/webhooks/WebhookForm';
 import WebhookItem from '../components/webhooks/WebhookItem';
 import WebhookLogList from '../components/webhooks/WebhookLogList';
+import { UserManagement } from '../components/UserManagement';
 import { toast } from 'sonner';
 import { 
   AlertDialog,
@@ -143,6 +145,9 @@ const Settings: React.FC = () => {
   const formattedTime = format(currentTime, 'HH:mm:ss', { locale: ptBR });
   const formattedDate = format(currentTime, 'dd/MM/yyyy', { locale: ptBR });
 
+  // Only show the Users tab if the user is an admin
+  const isAdmin = user?.role === 'admin';
+
   return (
     <Layout>
       <motion.div
@@ -182,6 +187,12 @@ const Settings: React.FC = () => {
               <User className="h-4 w-4" />
               Perfil do Usuário
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Usuários
+              </TabsTrigger>
+            )}
             <TabsTrigger value="webhooks" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               Webhooks
@@ -238,6 +249,16 @@ const Settings: React.FC = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="users">
+              <Card>
+                <CardContent className="pt-6">
+                  <UserManagement />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="webhooks">
             {!showWebhookForm && (

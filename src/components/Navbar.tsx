@@ -15,7 +15,6 @@ import {
   Home,
   Clipboard,
   Package,
-  Users,
   Settings
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -55,7 +54,6 @@ type NavItem = {
   title: string;
   href: string;
   icon: React.ReactNode;
-  adminOnly?: boolean;
 };
 
 export const Navbar: React.FC = () => {
@@ -77,12 +75,6 @@ export const Navbar: React.FC = () => {
       title: 'Inventário',
       href: '/inventory',
       icon: <Package className="h-4 w-4 mr-2" />,
-    },
-    {
-      title: 'Usuários',
-      href: '/users',
-      icon: <Users className="h-4 w-4 mr-2" />,
-      adminOnly: true
     },
     {
       title: 'Configurações',
@@ -109,23 +101,21 @@ export const Navbar: React.FC = () => {
 
           <NavigationMenu>
             <NavigationMenuList>
-              {navItems
-                .filter(item => !item.adminOnly || user.role === 'admin')
-                .map((item) => (
-                  <NavigationMenuItem key={item.href}>
-                    <Link to={item.href}>
-                      <NavigationMenuLink
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          location.pathname === item.href && "bg-accent text-accent-foreground"
-                        )}
-                      >
-                        {item.icon}
-                        {item.title}
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
-                ))}
+              {navItems.map((item) => (
+                <NavigationMenuItem key={item.href}>
+                  <Link to={item.href}>
+                    <NavigationMenuLink
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        location.pathname === item.href && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      {item.icon}
+                      {item.title}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              ))}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
