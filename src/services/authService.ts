@@ -1,3 +1,4 @@
+
 import { User, AuthUser } from '../types/auth';
 import { toast } from 'sonner';
 import {
@@ -8,21 +9,30 @@ import {
 
 // Get all users from storage
 export const getStoredUsers = (): AuthUser[] => {
-  const storedUsers = localStorage.getItem('users');
-  
-  if (storedUsers) {
-    return JSON.parse(storedUsers);
+  try {
+    const storedUsers = localStorage.getItem('users');
+    
+    if (storedUsers) {
+      return JSON.parse(storedUsers);
+    }
+    
+    // Initialize with empty array if no users exist
+    const emptyUsers: AuthUser[] = [];
+    localStorage.setItem('users', JSON.stringify(emptyUsers));
+    return emptyUsers;
+  } catch (error) {
+    console.error('Error getting stored users:', error);
+    return [];
   }
-  
-  // Initialize with empty array if no users exist
-  const emptyUsers: AuthUser[] = [];
-  localStorage.setItem('users', JSON.stringify(emptyUsers));
-  return emptyUsers;
 };
 
 // Store users
 export const storeUsers = (users: AuthUser[]): void => {
-  localStorage.setItem('users', JSON.stringify(users));
+  try {
+    localStorage.setItem('users', JSON.stringify(users));
+  } catch (error) {
+    console.error('Error storing users:', error);
+  }
 };
 
 // Login service
@@ -33,14 +43,23 @@ export const loginService = async (
   // Simulate API request delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Find user with matching credentials
-  const foundUser = getStoredUsers().find(
-    u => u.email === email && u.password === password
+  // Debug logging
+  console.log('Attempting login with:', email);
+  const allUsers = getStoredUsers();
+  console.log('All users in system:', allUsers.length);
+  console.log('Users:', allUsers.map(u => ({ id: u.id, email: u.email, status: u.status })));
+  
+  // Find user with matching credentials - case insensitive email comparison
+  const foundUser = allUsers.find(
+    u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
   );
   
   if (!foundUser) {
+    console.log('No user found with these credentials');
     throw new Error('Credenciais inválidas');
   }
+  
+  console.log('User found:', foundUser.id, foundUser.status);
   
   // Check if user is approved
   if (foundUser.status === 'pending') {
@@ -57,6 +76,7 @@ export const loginService = async (
   // Store in localStorage
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
   
+  console.log('Login successful for user:', userWithoutPassword.email);
   toast.success('Login realizado com sucesso');
   
   // Return user without password

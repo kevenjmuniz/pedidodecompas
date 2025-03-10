@@ -7,6 +7,7 @@ import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Index: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -14,7 +15,20 @@ const Index: React.FC = () => {
 
   React.useEffect(() => {
     if (isAuthenticated) {
+      console.log('User is authenticated, redirecting to dashboard');
+      toast.success('Bem-vindo de volta!');
       navigate('/dashboard', { replace: true });
+    } else {
+      console.log('User is not authenticated');
+      
+      // Log any stored users for debugging
+      const storedUsers = localStorage.getItem('users');
+      if (storedUsers) {
+        const users = JSON.parse(storedUsers);
+        console.log('Stored users:', users.length);
+      } else {
+        console.log('No stored users found');
+      }
     }
   }, [isAuthenticated, navigate]);
 
