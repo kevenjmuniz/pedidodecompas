@@ -143,13 +143,6 @@ const Dashboard: React.FC = () => {
               <RefreshCw className="mr-2 h-4 w-4" />
               Atualizar
             </Button>
-            
-            <Button size="sm" asChild>
-              <Link to="/orders/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Pedido
-              </Link>
-            </Button>
           </div>
         </div>
 
