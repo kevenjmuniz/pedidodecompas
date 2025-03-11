@@ -18,7 +18,9 @@ import {
   Settings,
   Truck,
   LogOut,
-  User
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
@@ -30,6 +32,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useSettings } from '../context/SettingsContext';
+import { Switch } from "@/components/ui/switch";
 
 const Logo = React.memo(() => {
   return (
@@ -70,6 +74,7 @@ type NavItem = {
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -104,6 +109,18 @@ export const Navbar: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   if (!user) {
@@ -144,12 +161,21 @@ export const Navbar: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2 mr-2">
+            <Sun className="h-4 w-4 text-muted-foreground" />
+            <Switch 
+              checked={theme === 'dark'}
+              onCheckedChange={toggleTheme}
+            />
+            <Moon className="h-4 w-4 text-muted-foreground" />
+          </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9 border-2 border-mcf-orange">
                   <AvatarFallback className="bg-mcf-orange/10 text-mcf-orange">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    {user.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -161,9 +187,21 @@ export const Navbar: React.FC = () => {
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
+                  <div className="mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
+                    {user?.role === 'admin' ? 'Administrador' : 'Usuário'}
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                asChild
+                className="cursor-pointer"
+              >
+                <Link to="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configurações</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={handleLogout}

@@ -11,12 +11,8 @@ import {
   Globe, 
   FileText, 
   Plus, 
-  Moon, 
-  Sun, 
   Clock, 
   User, 
-  LogOut, 
-  Settings as SettingsIcon,
   Users
 } from 'lucide-react';
 import { WebhookConfig } from '../services/webhookService';
@@ -35,8 +31,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -49,12 +43,10 @@ const Settings: React.FC = () => {
     webhookLogs,
     refreshWebhookLogs,
     testWebhook,
-    currentTime,
-    theme,
-    setTheme
+    currentTime
   } = useSettings();
   
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   const [showWebhookForm, setShowWebhookForm] = useState(false);
@@ -125,23 +117,6 @@ const Settings: React.FC = () => {
     }, 500);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
-
   const formattedTime = format(currentTime, 'HH:mm:ss', { locale: ptBR });
   const formattedDate = format(currentTime, 'dd/MM/yyyy', { locale: ptBR });
 
@@ -162,31 +137,19 @@ const Settings: React.FC = () => {
               Configure as opções do sistema de pedidos
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex flex-col items-end mr-4">
+          <div className="flex items-center">
+            <div className="flex flex-col items-end">
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                 <span className="text-lg font-medium">{formattedTime}</span>
               </div>
               <span className="text-xs text-muted-foreground">{formattedDate}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Sun className="h-4 w-4 text-muted-foreground" />
-              <Switch 
-                checked={theme === 'dark'}
-                onCheckedChange={toggleTheme}
-              />
-              <Moon className="h-4 w-4 text-muted-foreground" />
-            </div>
           </div>
         </div>
 
-        <Tabs defaultValue="user" className="w-full">
+        <Tabs defaultValue="webhooks" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="user" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Perfil do Usuário
-            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -202,53 +165,6 @@ const Settings: React.FC = () => {
               Logs
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="user">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="text-lg">
-                      {user?.name ? getInitials(user.name) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h2 className="text-xl font-bold">{user?.name}</h2>
-                    <p className="text-muted-foreground">{user?.email}</p>
-                    <div className="mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
-                      {user?.role === 'admin' ? 'Administrador' : 'Usuário'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <SettingsIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>Tema</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Sun className="h-4 w-4 text-muted-foreground" />
-                      <Switch 
-                        checked={theme === 'dark'}
-                        onCheckedChange={toggleTheme}
-                      />
-                      <Moon className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    variant="destructive" 
-                    className="w-full flex items-center justify-center"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {isAdmin && (
             <TabsContent value="users">
