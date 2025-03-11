@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,11 +38,7 @@ export function AuthForm() {
     try {
       if (authMode === 'login') {
         await login(email, password);
-        // Add toast confirmation
-        toast({
-          title: "Login bem-sucedido",
-          description: "Você está sendo redirecionado para o dashboard.",
-        });
+        toast.success("Login bem-sucedido. Você está sendo redirecionado para o dashboard.");
       } else if (authMode === 'register') {
         await register(name, email, password);
         navigate('/account-created');
@@ -60,12 +55,7 @@ export function AuthForm() {
     } catch (error: any) {
       console.error('Auth error:', error);
       setFormError(error.message);
-      // Add toast for error
-      toast({
-        title: "Erro de autenticação",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
