@@ -57,7 +57,6 @@ const OrderDetail: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
-  // Get order details
   const order = id ? getOrderById(id) : undefined;
   
   if (!order && !isLoading) {
@@ -77,7 +76,6 @@ const OrderDetail: React.FC = () => {
     );
   }
 
-  // Check user permissions
   const canEdit = order && (
     (order.createdBy === user?.id && order.status === 'pendente') || 
     user?.role === 'admin'
@@ -90,7 +88,6 @@ const OrderDetail: React.FC = () => {
     user?.role === 'admin'
   );
   
-  // Format dates
   const formattedCreatedAt = order 
     ? format(new Date(order.createdAt), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })
     : '';
@@ -99,7 +96,6 @@ const OrderDetail: React.FC = () => {
     ? format(new Date(order.updatedAt), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })
     : '';
   
-  // Handle status change
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (!order || !id) return;
     
@@ -114,7 +110,6 @@ const OrderDetail: React.FC = () => {
     }
   };
   
-  // Handle delete
   const handleDelete = async () => {
     if (!order || !id) return;
     

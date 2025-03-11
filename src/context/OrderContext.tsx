@@ -40,7 +40,6 @@ type OrderContextType = {
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-// Sample data
 const SAMPLE_ORDERS: Order[] = [
   {
     id: '1',
@@ -106,10 +105,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadOrders = async () => {
       setIsLoading(true);
       try {
-        // Simulate API request delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // In a real app, we would fetch orders from the API
         const storedOrders = localStorage.getItem('orders');
         if (storedOrders) {
           setOrders(JSON.parse(storedOrders));
@@ -133,20 +130,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user]);
 
-  // Helper function to send webhooks for an event
   const sendWebhookNotifications = async (
     event: WebhookEvent, 
     payload: any, 
     specificWebhook?: string
   ) => {
-    // Get enabled webhook configs that are subscribed to this event
     const eligibleWebhooks = webhookConfigs.filter(config => 
       config.enabled && 
       config.events.includes(event) && 
       (specificWebhook ? config.id === specificWebhook : true)
     );
     
-    // Send to all eligible webhooks
     const promises = eligibleWebhooks.map(config => sendWebhook(config, payload));
     await Promise.allSettled(promises);
   };
@@ -156,13 +150,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setIsLoading(true);
     try {
-      // Simulate API request delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const now = new Date().toISOString();
       const newOrder: Order = {
         ...orderData,
-        id: Math.random().toString(36).substr(2, 9), // Generate a random ID
+        id: Math.random().toString(36).substr(2, 9),
         createdAt: now,
         updatedAt: now,
         createdBy: user.id,
@@ -173,14 +166,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // Create webhook payload and send notifications
       const payload = createOrderCreatedPayload(newOrder);
       await sendWebhookNotifications('pedido_criado', payload);
       
-      toast.success('Order created successfully');
+      toast.success('Pedido criado com sucesso');
       return newOrder;
     } catch (error) {
-      toast.error('Failed to create order');
+      toast.error('Falha ao criar pedido');
       throw error;
     } finally {
       setIsLoading(false);
@@ -192,26 +184,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setIsLoading(true);
     try {
-      // Simulate API request delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const orderIndex = orders.findIndex(order => order.id === id);
       if (orderIndex === -1) throw new Error('Order not found');
       
-      // Check if user is authorized to edit
       const order = orders[orderIndex];
       if (order.createdBy !== user.id && user.role !== 'admin') {
         throw new Error('Not authorized to edit this order');
       }
       
-      // Check if order is not pending and user is trying to edit other fields than status
-      if (order.status !== 'pendente' && Object.keys(updates).some(key => key !== 'status')) {
-        if (user.role !== 'admin') {
-          throw new Error('Can only edit orders with pending status');
-        }
-      }
-      
-      // Check if status is being updated
       const statusChanged = updates.status && updates.status !== order.status;
       const previousStatus = order.status;
       
@@ -227,7 +209,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // If status changed, send webhook notification
       if (statusChanged) {
         const payload = createOrderStatusUpdatedPayload(
           updatedOrder, 
@@ -237,11 +218,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         await sendWebhookNotifications('status_atualizado', payload);
       }
       
-      toast.success('Order updated successfully');
+      toast.success('Pedido atualizado com sucesso');
       return updatedOrder;
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update order');
+      toast.error(error instanceof Error ? error.message : 'Falha ao atualizar pedido');
       throw error;
     } finally {
       setIsLoading(false);
@@ -269,37 +250,32 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setIsLoading(true);
     try {
-      // Simulate API request delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const orderIndex = orders.findIndex(order => order.id === id);
       if (orderIndex === -1) throw new Error('Order not found');
       
-      // Check if user is authorized to delete
       const order = orders[orderIndex];
       if (order.createdBy !== user.id && user.role !== 'admin') {
         throw new Error('Not authorized to delete this order');
       }
       
-      // Check if order is not pending
       if (order.status !== 'pendente' && user.role !== 'admin') {
         throw new Error('Can only delete orders with pending status');
       }
       
-      // Create a copy of the order before deleting
       const deletedOrder = { ...order };
       
       const updatedOrders = orders.filter(order => order.id !== id);
       setOrders(updatedOrders);
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
-      // Send webhook notification for canceled order
       const payload = createOrderCanceledPayload(deletedOrder, user.name);
       await sendWebhookNotifications('pedido_cancelado', payload);
       
-      toast.success('Order deleted successfully');
+      toast.success('Pedido excluído com sucesso');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete order');
+      toast.error(error instanceof Error ? error.message : 'Falha ao excluir pedido');
       throw error;
     } finally {
       setIsLoading(false);
