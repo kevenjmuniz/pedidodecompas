@@ -87,8 +87,9 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                   <TableCell className="text-right space-x-1">
                     <Button 
                       variant="ghost" 
-                      size="sm"
-                      onClick={() => navigate(`/product/${product.id}`)}
+                      size="icon"
+                      onClick={() => navigate(`/inventory/${product.id}`)}
+                      className="h-8 w-8 p-0"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -98,8 +99,9 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         {onEdit && (
                           <Button 
                             variant="ghost" 
-                            size="sm"
+                            size="icon"
                             onClick={() => onEdit(product)}
+                            className="h-8 w-8 p-0"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -108,9 +110,9 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         {onDelete && (
                           <Button 
                             variant="ghost" 
-                            size="sm"
+                            size="icon"
                             onClick={() => onDelete(product.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash className="h-4 w-4" />
                           </Button>

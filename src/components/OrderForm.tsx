@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrders, OrderStatus } from '../context/OrderContext';
@@ -226,14 +227,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               onClick={() => navigate(-1)}
               disabled={isSubmitting}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               Voltar
             </Button>
             <Button 
               type="submit" 
               disabled={isSubmitting}
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="h-4 w-4" />
               {isSubmitting ? 'Salvando...' : isEditing ? 'Atualizar Pedido' : 'Criar Pedido'}
             </Button>
           </CardFooter>

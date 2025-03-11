@@ -125,7 +125,7 @@ export const Navbar: React.FC = () => {
 
   if (!user) {
     return (
-      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 shadow-sm">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-sm">
         <div className="container flex h-16 items-center justify-between">
           <Logo />
         </div>
@@ -134,7 +134,7 @@ export const Navbar: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 shadow-sm">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Logo />
@@ -173,8 +173,8 @@ export const Navbar: React.FC = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9 border-2 border-mcf-orange">
-                  <AvatarFallback className="bg-mcf-orange/10 text-mcf-orange">
+                <Avatar className="h-9 w-9 border-2 border-primary">
+                  <AvatarFallback className="bg-primary/10 text-primary">
                     {user.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>

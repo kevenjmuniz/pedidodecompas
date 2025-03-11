@@ -18,13 +18,15 @@ const EditOrder: React.FC = () => {
   if (!order) {
     return (
       <Layout>
-        <div className="text-center py-16">
-          <h2 className="text-2xl font-bold">Pedido não encontrado</h2>
-          <p className="text-muted-foreground mt-2">O pedido solicitado não existe ou foi removido</p>
-          <Button className="mt-6" onClick={() => navigate(-1)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
+        <div className="container mx-auto py-6">
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold">Pedido não encontrado</h2>
+            <p className="text-muted-foreground mt-2">O pedido solicitado não existe ou foi removido</p>
+            <Button className="mt-6" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </div>
         </div>
       </Layout>
     );
@@ -32,14 +34,17 @@ const EditOrder: React.FC = () => {
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Editar Pedido</h1>
-        <p className="text-muted-foreground mt-1">
-          Atualize as informações do pedido
-        </p>
+      <div className="container mx-auto py-6">
+        <div className="flex items-center mb-6">
+          <Button variant="outline" onClick={() => navigate('/orders')} className="mr-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <h1 className="text-2xl font-bold">Editar Pedido</h1>
+        </div>
+        
+        <OrderForm initialData={order} isEditing={true} />
       </div>
-      
-      <OrderForm initialData={order} isEditing={true} />
     </Layout>
   );
 };

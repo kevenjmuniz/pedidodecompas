@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { Save, X } from 'lucide-react';
 import { Supplier, SupplierFormData } from '../../types/supplier';
 
 interface SupplierFormProps {
@@ -36,6 +36,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({ initialData, onSubmi
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof SupplierFormData, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -85,13 +86,20 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({ initialData, onSubmi
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (validateForm()) {
-      onSubmit(formData);
-    } else {
-      toast.error('Por favor, corrija os erros no formulário');
+    try {
+      if (validateForm()) {
+        await onSubmit(formData);
+      } else {
+        toast.error('Por favor, corrija os erros no formulário');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -158,12 +166,27 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({ initialData, onSubmi
         {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
       </div>
       
-      <div className="flex gap-2 justify-end pt-4">
-        <Button variant="outline" type="button" onClick={onCancel}>
+      <div className="flex gap-4 justify-end pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
+          <X className="h-4 w-4 mr-2" />
           Cancelar
         </Button>
-        <Button type="submit">
-          {initialData ? 'Atualizar' : 'Cadastrar'} Fornecedor
+        <Button 
+          type="submit"
+          disabled={isSubmitting}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {isSubmitting 
+            ? 'Salvando...' 
+            : initialData 
+              ? 'Atualizar Fornecedor' 
+              : 'Cadastrar Fornecedor'
+          }
         </Button>
       </div>
     </form>

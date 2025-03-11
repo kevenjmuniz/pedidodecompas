@@ -61,8 +61,8 @@ const Inventory = () => {
           <h1 className="text-3xl font-bold mb-4 md:mb-0">Inventário</h1>
           
           {isAdmin && (
-            <Button onClick={() => navigate('/inventory/new')} className="w-full md:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => navigate('/inventory/new')}>
+              <Plus className="h-4 w-4" />
               Novo Produto
             </Button>
           )}
