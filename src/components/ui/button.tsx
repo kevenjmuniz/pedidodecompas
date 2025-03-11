@@ -12,19 +12,25 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-full",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Adicionando botões de ação principal e secundária padronizados
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-semibold shadow-sm",
+        "primary-action": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-semibold shadow-sm",
+        "secondary-action": "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full font-semibold shadow-sm",
       },
       size: {
         default: "h-10 px-5 py-2",
         sm: "h-9 rounded-md px-4",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
+        // Adicionando tamanho padronizado para botões de ação
+        action: "h-10 px-5 py-2",
       },
     },
     defaultVariants: {
