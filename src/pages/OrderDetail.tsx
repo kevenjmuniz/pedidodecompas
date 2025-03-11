@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -150,8 +149,6 @@ const OrderDetail: React.FC = () => {
                 </h1>
                 <div className="flex items-center space-x-2 mt-1 text-sm text-muted-foreground">
                   <span>Pedido #{order.id}</span>
-                  <span>•</span>
-                  <StatusBadge status={order.status} />
                 </div>
               </div>
             </div>
@@ -164,37 +161,6 @@ const OrderDetail: React.FC = () => {
                     Editar
                   </Link>
                 </Button>
-              )}
-              
-              {canChangeStatus && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={isUpdatingStatus}>
-                      {isUpdatingStatus ? 'Atualizando...' : 'Alterar Status'}
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange('pendente')}
-                      disabled={order.status === 'pendente'}
-                    >
-                      <StatusBadge status="pendente" size="sm" />
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange('aguardando')}
-                      disabled={order.status === 'aguardando'}
-                    >
-                      <StatusBadge status="aguardando" size="sm" />
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange('resolvido')}
-                      disabled={order.status === 'resolvido'}
-                    >
-                      <StatusBadge status="resolvido" size="sm" />
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               )}
               
               {canDelete && (
