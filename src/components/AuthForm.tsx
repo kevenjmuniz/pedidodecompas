@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ import {
 export function AuthForm() {
   const { login, register, resetPassword, verifyResetToken, completePasswordReset } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  // Explicitly define all possible values for authMode
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'reset' | 'reset-confirm'>('login');
   const [formError, setFormError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
@@ -392,3 +394,4 @@ export function AuthForm() {
     </motion.div>
   );
 }
+
