@@ -10,8 +10,12 @@ type ToastProps = {
 
 // Create a compatibility layer that maps ShadCN toast API to Sonner
 const createToastFunction = () => {
-  // Create a callable function that handles the object style
-  const toastFunction = (props: ToastProps) => {
+  // Create a callable function that handles the object style and string style
+  const toastFunction = (props: ToastProps | string) => {
+    if (typeof props === 'string') {
+      return sonnerToast(props);
+    }
+    
     const { title, description, variant } = props;
     const message = description || title || "";
     

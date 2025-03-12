@@ -95,7 +95,7 @@ export const registerService = async (
   const currentUsers = getStoredUsers();
   
   // Check if email already exists
-  if (currentUsers.some(u => u.email === email)) {
+  if (currentUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
     throw new Error('E-mail já está em uso');
   }
   
@@ -142,7 +142,7 @@ export const addUserService = async (
   const currentUsers = getStoredUsers();
   
   // Check if email already exists
-  if (currentUsers.some(u => u.email === email)) {
+  if (currentUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
     throw new Error('E-mail já está em uso');
   }
 

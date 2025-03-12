@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ export function AuthForm() {
       if (authMode === 'login') {
         await login(email, password);
         toast.success("Login bem-sucedido. Você está sendo redirecionado para o dashboard.");
+        navigate('/dashboard');
       } else if (authMode === 'register') {
         await register(name, email, password);
         navigate('/account-created');
