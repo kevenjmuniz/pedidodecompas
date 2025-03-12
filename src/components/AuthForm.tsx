@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,10 +43,8 @@ export function AuthForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [code, setCode] = useState('');
   
-  // Set reset-confirm mode if token is in URL
   React.useEffect(() => {
     if (resetToken && resetEmail) {
-      // Verify token validity
       const isValid = verifyResetToken(resetEmail, resetToken);
       if (isValid) {
         setAuthMode('reset-confirm');
@@ -106,7 +103,6 @@ export function AuthForm() {
   };
 
   const handleSocialLogin = async (provider: string) => {
-    // This would integrate with actual OAuth providers in a real app
     toast.info(`Login com ${provider} será implementado em breve.`);
   };
 
