@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import {
@@ -11,7 +10,11 @@ import {
   getUsersWithoutPasswords,
   approveUserService,
   rejectUserService,
-  getStoredUsers
+  getStoredUsers,
+  isSessionValid,
+  clearSessionToken,
+  resetPasswordWithToken,
+  validateResetToken
 } from '../services/authService';
 import { toast } from 'sonner';
 
@@ -21,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
+  const [isSessionRestored, setIsSessionRestored] = useState(false);
 
   // Initialize default admin user if no users exist
   const initializeDefaultAdmin = () => {
@@ -44,17 +48,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Check session validity
+  const checkSession = () => {
+    if (isSessionValid()) {
+      // Session is valid, restore user from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } else {
+      // Session is invalid, clear user and token
+      setUser(null);
+      clearSessionToken();
+      localStorage.removeItem('user');
+    }
+    
+    setIsSessionRestored(true);
+  };
+
   // Load user and users on mount
   useEffect(() => {
     // Initialize default admin if needed
     initializeDefaultAdmin();
     
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // Check and restore session if valid
+    checkSession();
     
     // Load users
     refreshUsers();
@@ -70,10 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUsers(loadedUsers);
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
     setIsLoading(true);
     try {
-      const loggedInUser = await loginService(email, password);
+      const loggedInUser = await loginService(email, password, rememberMe);
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       refreshUsers(); // Refresh users list after login
@@ -87,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    clearSessionToken();
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -94,6 +113,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await registerService(name, email, password);
       refreshUsers();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    setIsLoading(true);
+    try {
+      await resetPasswordService(email);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const verifyResetToken = (email: string, token: string) => {
+    return validateResetToken(email, token);
+  };
+  
+  const completePasswordReset = async (email: string, token: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      await resetPasswordWithToken(email, token, newPassword);
     } catch (error) {
       throw error;
     } finally {
@@ -137,17 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string) => {
-    setIsLoading(true);
-    try {
-      await resetPasswordService(email);
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const approveUser = async (id: string) => {
     setIsLoading(true);
     try {
@@ -178,10 +212,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isLoading,
+        isSessionRestored,
         login,
         logout,
         register,
         resetPassword,
+        verifyResetToken,
+        completePasswordReset,
         users,
         addUser,
         removeUser,
