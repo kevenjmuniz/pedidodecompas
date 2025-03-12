@@ -13,7 +13,21 @@ export const getStoredUsers = (): AuthUser[] => {
     const storedUsers = localStorage.getItem('users');
     
     if (storedUsers) {
-      return JSON.parse(storedUsers);
+      const parsedUsers = JSON.parse(storedUsers);
+      
+      // Validate and fix malformed user records
+      const validatedUsers = parsedUsers.map((user: any) => {
+        // Fix malformed status field
+        if (user.status && typeof user.status === 'object' && user.status._type === 'undefined') {
+          return {
+            ...user,
+            status: 'approved' // Default to approved for legacy records
+          };
+        }
+        return user;
+      });
+      
+      return validatedUsers;
     }
     
     // Initialize with empty array if no users exist
@@ -61,17 +75,24 @@ export const loginService = async (
   
   console.log('User found:', foundUser.id, foundUser.status);
   
-  // Check if user is approved
-  if (foundUser.status === 'pending') {
+  // Check if user is approved - handle undefined or malformed status
+  const userStatus = typeof foundUser.status === 'object' ? 'approved' : foundUser.status;
+  
+  if (userStatus === 'pending') {
     throw new Error('Sua conta está aguardando aprovação do administrador.');
   }
   
-  if (foundUser.status === 'rejected') {
+  if (userStatus === 'rejected') {
     throw new Error('Sua solicitação de acesso foi rejeitada. Entre em contato com o administrador.');
   }
   
   // Create user object without password
   const { password: _, ...userWithoutPassword } = foundUser;
+  
+  // Fix status if it's malformed
+  if (typeof userWithoutPassword.status === 'object') {
+    userWithoutPassword.status = 'approved';
+  }
   
   // Store in localStorage
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
