@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthContextType } from '../types/auth';
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { User, AuthContextType, LoginMethod, AuthTokens } from '../types/auth';
 import {
   loginService,
+  loginWithProviderService,
   registerService,
   addUserService,
   removeUserService,
@@ -14,20 +16,39 @@ import {
   isSessionValid,
   clearSessionToken,
   resetPasswordWithToken,
-  validateResetToken
+  validateResetToken,
+  verifyOTPService,
+  resetPasswordWithOTPService,
+  setup2FAService,
+  verify2FAService,
+  disable2FAService,
+  refreshSessionService,
+  checkSessionStatusService,
+  getSessionTimeRemaining
 } from '../services/authService';
 import { toast } from 'sonner';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Session check interval in milliseconds (1 minute)
+const SESSION_CHECK_INTERVAL = 60 * 1000;
+// Warning before session expires (5 minutes)
+const SESSION_WARNING_THRESHOLD = 5 * 60 * 1000;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [isSessionRestored, setIsSessionRestored] = useState(false);
+  const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode) return savedMode === 'true';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   // Initialize default admin user if no users exist
-  const initializeDefaultAdmin = () => {
+  const initializeDefaultAdmin = useCallback(() => {
     const existingUsers = getStoredUsers();
     if (existingUsers.length === 0) {
       console.log('No users found, creating default admin user');
@@ -39,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password: 'admin123',
         role: 'admin' as const,
         status: 'approved' as const,
+        authProvider: 'email' as const,
+        has2FA: false,
       };
       
       // Store the default admin
@@ -46,25 +69,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Usuário admin criado com sucesso');
       console.log('Default admin user created');
     }
+  }, []);
+
+  // Update classes for dark mode
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
   };
 
-  // Check session validity
-  const checkSession = () => {
-    if (isSessionValid()) {
+  // Session management
+  const checkSession = useCallback(async () => {
+    if (await isSessionValid()) {
       // Session is valid, restore user from localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
+      }
+      
+      // Get remaining session time
+      const remaining = getSessionTimeRemaining();
+      setSessionTimeRemaining(remaining);
+      
+      // Show warning if session is about to expire
+      if (remaining && remaining < SESSION_WARNING_THRESHOLD) {
+        toast.warning(`Sua sessão expira em ${Math.ceil(remaining / 60000)} minutos`, {
+          duration: 10000,
+          action: {
+            label: 'Renovar',
+            onClick: () => refreshSession()
+          }
+        });
       }
     } else {
       // Session is invalid, clear user and token
       setUser(null);
       clearSessionToken();
       localStorage.removeItem('user');
+      setSessionTimeRemaining(null);
     }
     
     setIsSessionRestored(true);
+    return !!user;
+  }, [user]);
+
+  // Refresh session
+  const refreshSession = async (): Promise<boolean> => {
+    try {
+      const refreshed = await refreshSessionService();
+      if (refreshed) {
+        const remaining = getSessionTimeRemaining();
+        setSessionTimeRemaining(remaining);
+        toast.success('Sessão renovada com sucesso');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+      return false;
+    }
   };
+
+  // Setup session check interval
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      checkSession();
+    }, SESSION_CHECK_INTERVAL);
+    
+    return () => clearInterval(checkInterval);
+  }, [checkSession]);
 
   // Load user and users on mount
   useEffect(() => {
@@ -78,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUsers();
     
     setIsLoading(false);
-  }, []);
+  }, [initializeDefaultAdmin, checkSession]);
 
   // Refresh users list
   const refreshUsers = () => {
@@ -91,10 +172,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string, rememberMe: boolean = false) => {
     setIsLoading(true);
     try {
-      const loggedInUser = await loginService(email, password, rememberMe);
+      const { user: loggedInUser, tokens } = await loginService(email, password, rememberMe);
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       refreshUsers(); // Refresh users list after login
+      setSessionTimeRemaining(tokens.expiresAt - Date.now());
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithProvider = async (provider: LoginMethod) => {
+    setIsLoading(true);
+    try {
+      const { user: loggedInUser, tokens } = await loginWithProviderService(provider);
+      setUser(loggedInUser);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      refreshUsers();
+      setSessionTimeRemaining(tokens.expiresAt - Date.now());
     } catch (error) {
       throw error;
     } finally {
@@ -106,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('user');
     clearSessionToken();
+    setSessionTimeRemaining(null);
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -135,10 +233,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return validateResetToken(email, token);
   };
   
+  const verifyOTP = async (email: string, otp: string) => {
+    setIsLoading(true);
+    try {
+      return await verifyOTPService(email, otp);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const completePasswordReset = async (email: string, token: string, newPassword: string) => {
     setIsLoading(true);
     try {
       await resetPasswordWithToken(email, token, newPassword);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const resetPasswordWithOTP = async (email: string, otp: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      await resetPasswordWithOTPService(email, otp, newPassword);
     } catch (error) {
       throw error;
     } finally {
@@ -205,6 +325,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+  
+  const setup2FA = async () => {
+    setIsLoading(true);
+    try {
+      const secretUrl = await setup2FAService(user?.id || '');
+      return secretUrl;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const verify2FA = async (code: string) => {
+    setIsLoading(true);
+    try {
+      const success = await verify2FAService(user?.id || '', code);
+      if (success && user) {
+        // Update user with 2FA enabled
+        const updatedUser = { ...user, has2FA: true };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      return success;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const disable2FA = async () => {
+    setIsLoading(true);
+    try {
+      await disable2FAService(user?.id || '');
+      if (user) {
+        // Update user with 2FA disabled
+        const updatedUser = { ...user, has2FA: false };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const checkSessionStatus = async () => {
+    return await checkSessionStatusService();
+  };
 
   return (
     <AuthContext.Provider
@@ -213,18 +384,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         isSessionRestored,
+        isDarkMode,
+        toggleDarkMode,
         login,
+        loginWithProvider,
         logout,
         register,
         resetPassword,
         verifyResetToken,
+        verifyOTP,
         completePasswordReset,
+        resetPasswordWithOTP,
         users,
         addUser,
         removeUser,
         changePassword,
         approveUser,
-        rejectUser
+        rejectUser,
+        setup2FA,
+        verify2FA,
+        disable2FA,
+        checkSessionStatus,
+        refreshSession,
+        sessionTimeRemaining
       }}
     >
       {children}
