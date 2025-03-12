@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -31,7 +32,7 @@ export function AuthForm() {
   const resetToken = searchParams.get('token');
   const resetEmail = searchParams.get('email');
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState(resetEmail || '');
@@ -57,7 +58,7 @@ export function AuthForm() {
         setAuthMode('reset');
       }
     }
-  }, [resetToken, resetEmail, verifyResetToken, toast]);
+  }, [resetToken, resetEmail, verifyResetToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
