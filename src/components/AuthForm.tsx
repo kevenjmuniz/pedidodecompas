@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -362,10 +361,11 @@ export function AuthForm() {
                   maxLength={6}
                   render={({ slots }) => (
                     <InputOTPGroup className="gap-2">
-                      {slots.map((slot, index) => (
+                      {slots.map((slot, i) => (
                         <InputOTPSlot 
-                          key={index} 
+                          key={i} 
                           {...slot} 
+                          index={i}
                           className={`${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`}
                         />
                       ))}

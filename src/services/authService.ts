@@ -256,11 +256,30 @@ export const loginService = async (
   console.log('Attempting login with:', email);
   const allUsers = getStoredUsers();
   console.log('All users in system:', allUsers.length);
+  console.log('Users data:', allUsers);
   
   // Find user with matching credentials - case insensitive email comparison
-  const foundUser = allUsers.find(
-    u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-  );
+  // Implementar login com "admin" por padrão se não encontrar o email
+  let foundUser = null;
+  
+  if (email === 'admin' && password === 'admin123') {
+    // Tenta encontrar o usuário admin padrão
+    foundUser = allUsers.find(
+      u => u.email === 'admin'
+    );
+    
+    // Se não encontrar, verifica admin por outros critérios
+    if (!foundUser) {
+      foundUser = allUsers.find(
+        u => u.role === 'admin' && u.status === 'approved'
+      );
+    }
+  } else {
+    // Login normal via email
+    foundUser = allUsers.find(
+      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+  }
   
   if (!foundUser) {
     console.log('No user found with these credentials');
@@ -778,14 +797,19 @@ export const setup2FAService = async (userId: string): Promise<string> => {
     throw new Error('Usuário não encontrado');
   }
   
-  // Create TOTP object
+  // Create TOTP object with a random secret
+  // Fix for OTPAuth.Secret.fromRandom - we'll create a random secret differently
+  const randomBytes = new Uint8Array(20);
+  window.crypto.getRandomValues(randomBytes);
+  const secret = OTPAuth.Secret.fromUTF8(Array.from(randomBytes).map(b => String.fromCharCode(b)).join(''));
+  
   const totp = new OTPAuth.TOTP({
     issuer: 'Sistema de Pedidos',
     label: users[userIndex].email,
     algorithm: 'SHA1',
     digits: 6,
     period: 30,
-    secret: OTPAuth.Secret.fromRandom(20),
+    secret: secret,
   });
   
   // Save secret to user

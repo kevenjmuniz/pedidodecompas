@@ -1,4 +1,3 @@
-
 export type User = {
   id: string;
   name: string;
@@ -7,7 +6,7 @@ export type User = {
   status: 'pending' | 'approved' | 'rejected';
   avatar?: string;
   lastLogin?: number;
-  authProvider?: 'email' | 'google' | 'github' | 'microsoft'; 
+  authProvider?: 'email' | 'google' | 'github' | 'microsoft' | 'facebook'; 
   has2FA?: boolean;
 };
 
@@ -28,7 +27,7 @@ export type LoginCredentials = {
   rememberMe?: boolean;
 };
 
-export type LoginMethod = 'email' | 'google' | 'github' | 'microsoft';
+export type LoginMethod = 'email' | 'google' | 'github' | 'microsoft' | 'facebook';
 
 export type AuthTokens = {
   accessToken: string;
