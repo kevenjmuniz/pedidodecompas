@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -15,47 +15,23 @@ import {
   Lock, 
   User, 
   ArrowRight, 
+  Smartphone,
   Facebook,
   Mail,
-  KeyRound,
-  Github,
-  AlertOctagon,
-  Loader2,
-  QrCode,
-  ShieldCheck,
-  ChevronRight,
-  SquareCode,
-  KeySquare
+  Key,
+  KeyRound
 } from 'lucide-react';
-import { LoginMethod } from '@/types/auth';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-// Types for all possible auth modes
-type AuthMode = 'login' | 'register' | 'reset' | 'reset-confirm' | 'reset-otp' | 'verify-2fa' | 'setup-2fa';
 
 export function AuthForm() {
-  const { 
-    login, 
-    register, 
-    resetPassword, 
-    verifyResetToken, 
-    completePasswordReset, 
-    verifyOTP, 
-    resetPasswordWithOTP,
-    loginWithProvider, 
-    setup2FA,
-    verify2FA,
-    isDarkMode
-  } = useAuth();
-  
+  const { login, register, resetPassword, verifyResetToken, completePasswordReset } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  // Explicitly define all possible values for authMode
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'reset' | 'reset-confirm'>('login');
   const [formError, setFormError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get('token');
   const resetEmail = searchParams.get('email');
   const navigate = useNavigate();
+  const { toast: uiToast } = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState(resetEmail || '');
@@ -65,9 +41,7 @@ export function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [recoveryTab, setRecoveryTab] = useState<'email' | 'otp'>('email');
+  const [code, setCode] = useState('');
   
   React.useEffect(() => {
     if (resetToken && resetEmail) {
@@ -87,7 +61,7 @@ export function AuthForm() {
     e.preventDefault();
     setFormError(null);
     
-    if ((authMode === 'register' || authMode === 'reset-confirm' || authMode === 'reset-otp') && password !== confirmPassword) {
+    if ((authMode === 'register' || authMode === 'reset-confirm') && password !== confirmPassword) {
       setFormError('As senhas não coincidem');
       return;
     }
@@ -96,61 +70,21 @@ export function AuthForm() {
     
     try {
       if (authMode === 'login') {
-        try {
-          await login(email, password, rememberMe);
-          toast.success("Login bem-sucedido. Você está sendo redirecionado para o dashboard.");
-          navigate('/dashboard');
-        } catch (error: any) {
-          if (error.message === '2FA_REQUIRED') {
-            // User has 2FA enabled, redirect to 2FA verification
-            setAuthMode('verify-2fa');
-            toast.info("Autenticação de dois fatores necessária");
-          } else {
-            throw error;
-          }
-        }
+        await login(email, password, rememberMe);
+        toast.success("Login bem-sucedido. Você está sendo redirecionado para o dashboard.");
+        navigate('/dashboard');
       } else if (authMode === 'register') {
         await register(name, email, password);
         navigate('/account-created');
         return;
       } else if (authMode === 'reset') {
         await resetPassword(email);
-        toast.success("Instruções de redefinição de senha enviadas. Verifique seu email.");
-        if (recoveryTab === 'otp') {
-          setAuthMode('reset-otp');
-        } else {
-          setAuthMode('login');
-        }
+        toast.success("E-mail de redefinição de senha enviado. Verifique sua caixa de entrada.");
+        setAuthMode('login');
       } else if (authMode === 'reset-confirm') {
         await completePasswordReset(email, token, password);
         toast.success("Senha redefinida com sucesso. Você já pode fazer login.");
         setAuthMode('login');
-      } else if (authMode === 'reset-otp') {
-        // Verify OTP first
-        const isValid = await verifyOTP(email, otp);
-        if (isValid) {
-          await resetPasswordWithOTP(email, otp, password);
-          toast.success("Senha redefinida com sucesso. Você já pode fazer login.");
-          setAuthMode('login');
-        } else {
-          throw new Error('Código de verificação inválido');
-        }
-      } else if (authMode === 'verify-2fa') {
-        const isValid = await verify2FA(otp);
-        if (isValid) {
-          toast.success("Autenticação de dois fatores concluída com sucesso.");
-          navigate('/dashboard');
-        } else {
-          throw new Error('Código de verificação inválido');
-        }
-      } else if (authMode === 'setup-2fa') {
-        const isValid = await verify2FA(otp);
-        if (isValid) {
-          toast.success("Autenticação de dois fatores configurada com sucesso.");
-          setAuthMode('login');
-        } else {
-          throw new Error('Código de verificação inválido');
-        }
       }
       
       setName('');
@@ -158,7 +92,7 @@ export function AuthForm() {
       setPassword('');
       setConfirmPassword('');
       setToken('');
-      setOtp('');
+      setCode('');
     } catch (error: any) {
       console.error('Auth error:', error);
       setFormError(error.message);
@@ -168,33 +102,8 @@ export function AuthForm() {
     }
   };
 
-  const handleSocialLogin = async (provider: LoginMethod) => {
-    setIsLoading(true);
-    try {
-      await loginWithProvider(provider);
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Social login error:', error);
-      setFormError(error.message);
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleSetup2FA = async () => {
-    setIsLoading(true);
-    try {
-      const url = await setup2FA();
-      setQrCodeUrl(url);
-      setAuthMode('setup-2fa');
-    } catch (error: any) {
-      console.error('2FA setup error:', error);
-      setFormError(error.message);
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSocialLogin = async (provider: string) => {
+    toast.info(`Login com ${provider} será implementado em breve.`);
   };
 
   const getFormTitle = () => {
@@ -203,9 +112,6 @@ export function AuthForm() {
       case 'register': return 'Criar Conta';
       case 'reset': return 'Recuperar Senha';
       case 'reset-confirm': return 'Redefinir Senha';
-      case 'reset-otp': return 'Verificar Código';
-      case 'verify-2fa': return 'Verificação 2FA';
-      case 'setup-2fa': return 'Configurar 2FA';
     }
   };
 
@@ -213,11 +119,8 @@ export function AuthForm() {
     switch (authMode) {
       case 'login': return 'Entre com suas credenciais para acessar';
       case 'register': return 'Preencha os dados para criar uma nova conta';
-      case 'reset': return 'Escolha como deseja redefinir sua senha';
+      case 'reset': return 'Informe seu email para redefinir a senha';
       case 'reset-confirm': return 'Crie uma nova senha para sua conta';
-      case 'reset-otp': return 'Digite o código enviado e sua nova senha';
-      case 'verify-2fa': return 'Digite o código do seu aplicativo autenticador';
-      case 'setup-2fa': return 'Escaneie o QR code com seu aplicativo autenticador';
     }
   };
 
@@ -236,23 +139,22 @@ export function AuthForm() {
     >
       <div className="space-y-6">
         <div className="text-center space-y-2">
-          <h2 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-mcf-darkgray'}`}>
+          <h2 className="text-2xl font-bold tracking-tight text-mcf-darkgray">
             {getFormTitle()}
           </h2>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-mcf-gray'}`}>
+          <p className="text-sm text-mcf-gray">
             {getFormDescription()}
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Register Form Fields */}
           {authMode === 'register' && (
             <div className="space-y-2">
-              <Label htmlFor="name" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
+              <Label htmlFor="name" className="text-sm font-medium">
                 Nome completo
               </Label>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <User size={18} />
                 </div>
                 <Input
@@ -261,21 +163,20 @@ export function AuthForm() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={`pl-10 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-mcf-orange focus:ring-mcf-orange/30' : 'bg-gray-50 border-gray-200 focus:border-mcf-orange'}`}
+                  className="pl-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
                   required
                 />
               </div>
             </div>
           )}
           
-          {/* Email Field - hidden in some modes */}
-          {authMode !== 'reset-confirm' && authMode !== 'verify-2fa' && authMode !== 'setup-2fa' && (
+          {authMode !== 'reset-confirm' && (
             <div className="space-y-2">
-              <Label htmlFor="email" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
+              <Label htmlFor="email" className="text-sm font-medium">
                 Email
               </Label>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <AtSign size={18} />
                 </div>
                 <Input
@@ -284,129 +185,51 @@ export function AuthForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-mcf-orange focus:ring-mcf-orange/30' : 'bg-gray-50 border-gray-200 focus:border-mcf-orange'}`}
+                  className="pl-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
                   required
-                  disabled={authMode === 'reset-otp'}
+                  disabled={authMode === 'reset-confirm'}
                 />
               </div>
             </div>
           )}
           
-          {/* Readonly Email Field */}
           {authMode === 'reset-confirm' && (
             <div className="space-y-2">
-              <Label htmlFor="email" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
+              <Label htmlFor="email" className="text-sm font-medium">
                 Email
               </Label>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <AtSign size={18} />
                 </div>
                 <Input
                   id="email"
                   value={email}
-                  className={`pl-10 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-gray-100 border-gray-200'}`}
+                  className="pl-10 bg-gray-100 border-gray-200"
                   disabled
                 />
               </div>
             </div>
           )}
           
-          {/* Password Reset Options */}
-          {authMode === 'reset' && (
-            <div className="space-y-4 mt-4">
-              <Tabs 
-                value={recoveryTab} 
-                onValueChange={(value) => setRecoveryTab(value as 'email' | 'otp')}
-                className="w-full"
-              >
-                <TabsList className={`grid w-full grid-cols-2 ${isDarkMode ? 'bg-gray-700' : ''}`}>
-                  <TabsTrigger value="email" className={`${isDarkMode ? 'data-[state=active]:bg-gray-600 data-[state=active]:text-white' : ''}`}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Via Email
-                  </TabsTrigger>
-                  <TabsTrigger value="otp" className={`${isDarkMode ? 'data-[state=active]:bg-gray-600 data-[state=active]:text-white' : ''}`}>
-                    <KeySquare className="mr-2 h-4 w-4" />
-                    Via Código
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="email" className="mt-4">
-                  <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
-                    <p className="text-sm">
-                      Você receberá um email com instruções para redefinir sua senha.
-                    </p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="otp" className="mt-4">
-                  <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-600'}`}>
-                    <p className="text-sm">
-                      Você receberá um código de 6 dígitos para verificação.
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-          
-          {/* OTP Input Field */}
-          {(authMode === 'reset-otp' || authMode === 'verify-2fa' || authMode === 'setup-2fa') && (
-            <div className="space-y-4">
-              <Label htmlFor="otp" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
-                Código de verificação
-              </Label>
-              <div className="flex justify-center">
-                <InputOTP
-                  value={otp}
-                  onChange={setOtp}
-                  maxLength={6}
-                  render={({ slots }) => (
-                    <InputOTPGroup className="gap-2">
-                      {slots.map((slot, i) => (
-                        <InputOTPSlot 
-                          key={i} 
-                          {...slot} 
-                          index={i}
-                          className={`${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`}
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  )}
-                />
-              </div>
-              
-              {authMode === 'setup-2fa' && qrCodeUrl && (
-                <div className="flex flex-col items-center space-y-4 mt-4">
-                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-white' : 'bg-gray-100'}`}>
-                    <QrCode className="h-32 w-32 text-black" />
-                    <p className="text-xs mt-2 text-center text-gray-500">QR Code para autenticador</p>
-                  </div>
-                  <p className={`text-sm text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Escaneie este QR code com seu aplicativo autenticador (Google Authenticator, Microsoft Authenticator, etc.) e digite o código gerado acima.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Password Fields */}
-          {(authMode === 'login' || authMode === 'register' || authMode === 'reset-confirm' || authMode === 'reset-otp') && (
+          {(authMode === 'login' || authMode === 'register' || authMode === 'reset-confirm') && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
+                <Label htmlFor="password" className="text-sm font-medium">
                   Senha
                 </Label>
                 {authMode === 'login' && (
                   <button
                     type="button"
                     onClick={() => setAuthMode('reset')}
-                    className={`text-xs ${isDarkMode ? 'text-mcf-orange hover:text-mcf-orange/80' : 'text-mcf-blue hover:text-mcf-blue/80'} hover:underline focus:outline-none`}
+                    className="text-xs text-mcf-blue hover:underline focus:outline-none"
                   >
                     Esqueceu a senha?
                   </button>
                 )}
               </div>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <Lock size={18} />
                 </div>
                 <Input
@@ -415,13 +238,13 @@ export function AuthForm() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`pl-10 pr-10 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-mcf-orange focus:ring-mcf-orange/30' : 'bg-gray-50 border-gray-200 focus:border-mcf-orange'}`}
+                  className="pl-10 pr-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -429,14 +252,13 @@ export function AuthForm() {
             </div>
           )}
           
-          {/* Confirm Password Field */}
-          {(authMode === 'register' || authMode === 'reset-confirm' || authMode === 'reset-otp') && (
+          {(authMode === 'register' || authMode === 'reset-confirm') && (
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : ''}`}>
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">
                 Confirmar Senha
               </Label>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <Lock size={18} />
                 </div>
                 <Input
@@ -445,13 +267,13 @@ export function AuthForm() {
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-10 pr-10 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-mcf-orange focus:ring-mcf-orange/30' : 'bg-gray-50 border-gray-200 focus:border-mcf-orange'}`}
+                  className="pl-10 pr-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -459,83 +281,61 @@ export function AuthForm() {
             </div>
           )}
           
-          {/* Remember Me checkbox */}
           {authMode === 'login' && (
             <div className="flex items-center space-x-2 mt-2">
               <Checkbox 
                 id="rememberMe" 
                 checked={rememberMe} 
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
-                className={isDarkMode ? 'border-gray-600 data-[state=checked]:bg-mcf-orange data-[state=checked]:border-mcf-orange' : ''}
               />
-              <Label htmlFor="rememberMe" className={`text-sm font-medium cursor-pointer ${isDarkMode ? 'text-gray-300' : ''}`}>
+              <Label htmlFor="rememberMe" className="text-sm font-medium cursor-pointer">
                 Lembrar-me neste dispositivo
               </Label>
             </div>
           )}
           
-          {/* Display Form Errors */}
           {formError && (
-            <div className={`${isDarkMode ? 'bg-red-900/30 border-red-800 text-red-200' : 'bg-red-50 border-red-200 text-red-700'} border px-4 py-3 rounded-lg text-sm flex items-start gap-2`}>
-              <AlertOctagon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <span>{formError}</span>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {formError}
             </div>
           )}
           
-          {/* Submit Button */}
           <Button 
             type="submit" 
-            className={`w-full bg-mcf-orange hover:bg-mcf-orange/90 text-white font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 mt-2 ${isDarkMode ? 'shadow-[0_0_10px_rgba(255,137,51,0.3)]' : ''}`}
+            className="w-full bg-mcf-orange hover:bg-mcf-orange/90 text-white font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 mt-2"
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Processando...</span>
-              </>
+              "Processando..."
             ) : (
               <>
                 {authMode === 'login' ? 'Entrar' : 
                  authMode === 'register' ? 'Criar Conta' : 
-                 authMode === 'reset' ? 'Enviar Instruções' :
-                 authMode === 'reset-confirm' || authMode === 'reset-otp' ? 'Redefinir Senha' :
-                 authMode === 'verify-2fa' || authMode === 'setup-2fa' ? 'Verificar' : 'Continuar'}
+                 authMode === 'reset' ? 'Enviar Email' :
+                 'Redefinir Senha'}
                 <ArrowRight size={18} />
               </>
             )}
           </Button>
-          
-          {/* 2FA Setup Button (only shown in login screen) */}
-          {authMode === 'login' && (
-            <Button
-              type="button"
-              variant="outline"
-              className={`w-full mt-2 ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-700/50' : ''}`}
-              onClick={handleSetup2FA}
-            >
-              <ShieldCheck className="mr-2 h-4 w-4" /> Configurar autenticação 2FA
-            </Button>
-          )}
         </form>
         
-        {/* Social Login Options */}
         {authMode === 'login' && (
           <>
             <div className="relative py-3">
               <div className="absolute inset-0 flex items-center">
-                <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+                <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center">
-                <span className={`${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'} px-4 text-sm`}>ou</span>
+                <span className="bg-white px-4 text-sm text-gray-500">ou</span>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => handleSocialLogin('google')}
-                className={`w-full ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-700/50' : 'border-gray-300 hover:bg-gray-50 text-gray-700'} font-medium`}
+                onClick={() => handleSocialLogin('Google')}
+                className="w-full border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path
@@ -555,62 +355,36 @@ export function AuthForm() {
                     fill="#EA4335"
                   />
                 </svg>
-                Google
+                Continuar com Google
               </Button>
               
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => handleSocialLogin('github')}
-                className={`w-full ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-700/50' : 'border-gray-300 hover:bg-gray-50 text-gray-700'} font-medium`}
-              >
-                <Github className="w-5 h-5 mr-2" />
-                GitHub
-              </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => handleSocialLogin('microsoft')}
-                className={`w-full ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-700/50' : 'border-gray-300 hover:bg-gray-50 text-gray-700'} font-medium`}
-              >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 23 23">
-                  <path fill="#f1511b" d="M11.5 0h-11.5v11.5h11.5z"></path>
-                  <path fill="#80cc28" d="M23 0h-11.5v11.5h11.5z"></path>
-                  <path fill="#00adef" d="M11.5 11.5h-11.5v11.5h11.5z"></path>
-                  <path fill="#fbbc09" d="M23 11.5h-11.5v11.5h11.5z"></path>
-                </svg>
-                Microsoft
-              </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => handleSocialLogin('facebook')}
-                className={`w-full ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-700/50' : 'border-gray-300 hover:bg-gray-50 text-gray-700'} font-medium`}
+                onClick={() => handleSocialLogin('Facebook')}
+                className="w-full border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
               >
                 <Facebook className="w-5 h-5 mr-2 text-[#1877F2]" />
-                Facebook
+                Continuar com Facebook
               </Button>
             </div>
           </>
         )}
         
-        {/* Footer Links - Registration or Login */}
         <div className="text-center">
           {authMode === 'login' ? (
             <button 
               onClick={() => setAuthMode('register')} 
-              className={`${isDarkMode ? 'text-mcf-orange hover:text-mcf-orange/80' : 'text-mcf-blue hover:text-mcf-blue/80'} text-sm font-medium hover:underline transition-colors`}
+              className="text-mcf-blue hover:text-mcf-blue/80 text-sm font-medium hover:underline transition-colors"
             >
               Não tem uma conta? Cadastre-se
             </button>
-          ) : authMode === 'register' || authMode === 'reset' || authMode === 'reset-confirm' || authMode === 'reset-otp' || authMode === 'verify-2fa' || authMode === 'setup-2fa' ? (
+          ) : authMode === 'register' || authMode === 'reset' || authMode === 'reset-confirm' ? (
             <button 
               onClick={() => setAuthMode('login')} 
-              className={`${isDarkMode ? 'text-mcf-orange hover:text-mcf-orange/80' : 'text-mcf-blue hover:text-mcf-blue/80'} text-sm font-medium hover:underline transition-colors`}
+              className="text-mcf-blue hover:text-mcf-blue/80 text-sm font-medium hover:underline transition-colors"
             >
-              <ChevronRight className="h-4 w-4 inline-block" /> Voltar para o login
+              Já tem uma conta? Entre aqui
             </button>
           ) : null}
         </div>
