@@ -44,32 +44,27 @@ export const UserManagement: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   
-  // State for password change
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Check for pending users and switch to pending tab
   useEffect(() => {
     console.log("UserManagement component mounted, users:", users.length);
     console.log("Pending users:", users.filter(u => u.status === 'pending').map(u => u.email));
     
     const pendingUsers = users.filter(user => user.status === 'pending');
     if (pendingUsers.length > 0) {
-      // Only switch tabs if we're on the default 'all' tab
       if (activeTab === 'all') {
         setActiveTab('pending');
         
-        // Show notification about pending users
         toast.info(`${pendingUsers.length} usuário(s) aguardando aprovação`, {
           icon: <Bell className="h-5 w-5" />,
           duration: 5000,
         });
       }
     }
-  }, [users]);
+  }, [users, activeTab]);
 
-  // Only admin users should be able to access this component
   if (!currentUser || currentUser.role !== 'admin') {
     return (
       <Card>
@@ -95,14 +90,15 @@ export const UserManagement: React.FC = () => {
     
     try {
       await addUser(name, email, password, role);
-      // Reset form after successful addition
       setName('');
       setEmail('');
       setPassword('');
       setRole('user');
       setIsAddingUser(false);
-    } catch (error) {
+      toast.success('Usuário adicionado com sucesso');
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || 'Erro ao adicionar usuário');
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +108,10 @@ export const UserManagement: React.FC = () => {
     setIsLoading(true);
     try {
       await removeUser(id);
-    } catch (error) {
+      toast.success('Usuário removido com sucesso');
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || 'Erro ao remover usuário');
     } finally {
       setIsLoading(false);
     }
@@ -125,12 +123,15 @@ export const UserManagement: React.FC = () => {
     
     setIsLoading(true);
     try {
+      console.log('Changing password for user:', selectedUserId);
       await changePassword(selectedUserId, newPassword);
       setNewPassword('');
       setIsChangingPassword(false);
       setSelectedUserId(null);
-    } catch (error) {
-      console.error(error);
+      toast.success('Senha alterada com sucesso');
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Erro ao alterar senha');
     } finally {
       setIsLoading(false);
     }
@@ -141,9 +142,9 @@ export const UserManagement: React.FC = () => {
     try {
       await approveUser(id);
       toast.success('Usuário aprovado com sucesso');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Erro ao aprovar usuário');
+      toast.error(error.message || 'Erro ao aprovar usuário');
     } finally {
       setIsLoading(false);
     }
@@ -154,9 +155,9 @@ export const UserManagement: React.FC = () => {
     try {
       await rejectUser(id);
       toast.success('Usuário rejeitado com sucesso');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Erro ao rejeitar usuário');
+      toast.error(error.message || 'Erro ao rejeitar usuário');
     } finally {
       setIsLoading(false);
     }

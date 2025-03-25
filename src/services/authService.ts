@@ -289,6 +289,8 @@ export const changePasswordService = async (
     throw new Error('Usuário não encontrado');
   }
   
+  console.log('Changing password for user:', currentUsers[userIndex].email);
+  
   // Update password
   const updatedUsers = [...currentUsers];
   updatedUsers[userIndex] = {
@@ -298,6 +300,18 @@ export const changePasswordService = async (
   
   // Update localStorage
   storeUsers(updatedUsers);
+  
+  // If the user in localStorage is the same one, update their stored password
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    const parsedUser = JSON.parse(storedUser);
+    if (parsedUser.id === id) {
+      // Update stored user, but don't include password
+      localStorage.setItem('user', JSON.stringify({
+        ...parsedUser
+      }));
+    }
+  }
   
   toast.success('Senha alterada com sucesso');
 };

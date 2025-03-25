@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import {
@@ -31,7 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
     
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+      }
     }
     
     // Load users
@@ -42,10 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Refresh users list
   const refreshUsers = () => {
-    const loadedUsers = getUsersWithoutPasswords();
-    console.log('Refreshing users, found:', loadedUsers.length, 'users');
-    console.log('Pending users:', loadedUsers.filter(u => u.status === 'pending').length);
-    setUsers(loadedUsers);
+    try {
+      const loadedUsers = getUsersWithoutPasswords();
+      console.log('Refreshing users, found:', loadedUsers.length, 'users');
+      console.log('Pending users:', loadedUsers.filter(u => u.status === 'pending').length);
+      setUsers(loadedUsers);
+    } catch (error) {
+      console.error('Error refreshing users:', error);
+    }
   };
 
   const login = async (email: string, password: string) => {
@@ -55,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       refreshUsers(); // Refresh users list after login
+      return loggedInUser;
     } catch (error) {
       throw error;
     } finally {
@@ -107,8 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await changePasswordService(id, newPassword);
+      toast.success('Senha alterada com sucesso');
       refreshUsers();
     } catch (error) {
+      toast.error('Erro ao alterar senha');
       throw error;
     } finally {
       setIsLoading(false);
