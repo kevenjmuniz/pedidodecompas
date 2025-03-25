@@ -29,6 +29,7 @@ function App() {
         <Toaster />
         <AuthProvider>
           <SettingsProvider>
+            {/* Correctly nest the providers to ensure AuthProvider is available for OrderProvider */}
             <OrderProvider>
               <InventoryProvider>
                 <SupplierProvider>

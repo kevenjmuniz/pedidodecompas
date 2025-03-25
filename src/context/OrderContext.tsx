@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from './AuthContext';
-import { useSettings } from './SettingsContext';
+import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { 
   WebhookConfig, 
   WebhookEvent,
