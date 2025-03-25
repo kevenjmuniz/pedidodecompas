@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AuthForm } from '../components/AuthForm';
@@ -14,7 +14,11 @@ const Index: React.FC = () => {
   const { isAuthenticated, isDarkMode, toggleDarkMode } = useAuth();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
+    console.log('Index component mounted');
+    console.log('isDarkMode:', isDarkMode);
+    console.log('isAuthenticated:', isAuthenticated);
+    
     if (isAuthenticated) {
       console.log('User is authenticated, redirecting to dashboard');
       toast.success('Bem-vindo de volta!');
