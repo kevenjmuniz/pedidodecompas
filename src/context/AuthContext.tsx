@@ -11,9 +11,8 @@ import {
   getUsersWithoutPasswords,
   approveUserService,
   rejectUserService,
-  getStoredUsers,
   ensureDefaultAdminExists
-} from '../services/authService';
+} from '../services/authServiceDb';
 import { toast } from 'sonner';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,32 +24,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize auth state and ensure default admin exists
   useEffect(() => {
-    // Ensure default admin exists
-    ensureDefaultAdminExists();
-    
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedUser) {
+    const initializeAuth = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        // Ensure default admin exists
+        await ensureDefaultAdminExists();
+        
+        // Check if user is stored in localStorage
+        const storedUser = localStorage.getItem('user');
+        
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing stored user:', error);
+            localStorage.removeItem('user');
+          }
+        }
+        
+        // Load users
+        await refreshUsers();
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
     
-    // Load users
-    refreshUsers();
-    
-    setIsLoading(false);
+    initializeAuth();
   }, []);
 
   // Refresh users list
-  const refreshUsers = () => {
+  const refreshUsers = async () => {
     try {
-      const loadedUsers = getUsersWithoutPasswords();
+      const loadedUsers = await getUsersWithoutPasswords();
       console.log('Refreshing users, found:', loadedUsers.length, 'users');
       console.log('Pending users:', loadedUsers.filter(u => u.status === 'pending').length);
       setUsers(loadedUsers);
@@ -65,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const loggedInUser = await loginService(email, password);
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
-      refreshUsers(); // Refresh users list after login
+      await refreshUsers(); // Refresh users list after login
       return loggedInUser;
     } catch (error) {
       throw error;
@@ -83,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await registerService(name, email, password);
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       throw error;
     } finally {
@@ -95,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await addUserService(name, email, password, role);
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       throw error;
     } finally {
@@ -107,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await removeUserService(id, user?.id);
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       throw error;
     } finally {
@@ -120,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await changePasswordService(id, newPassword);
       toast.success('Senha alterada com sucesso');
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       toast.error('Erro ao alterar senha');
       throw error;
@@ -144,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await approveUserService(id);
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       throw error;
     } finally {
@@ -156,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await rejectUserService(id);
-      refreshUsers();
+      await refreshUsers();
     } catch (error) {
       throw error;
     } finally {
