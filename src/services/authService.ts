@@ -59,7 +59,9 @@ export const loginService = async (
   
   // Debug logging
   console.log('Attempting login with:', email);
-  const allUsers = getStoredUsers();
+  
+  // Force create default admin user if not exists
+  const allUsers = ensureDefaultAdminExists();
   console.log('All users in system:', allUsers.length);
   console.log('Users:', allUsers.map(u => ({ id: u.id, email: u.email, status: u.status })));
   
@@ -104,6 +106,40 @@ export const loginService = async (
   return userWithoutPassword;
 };
 
+// Ensure default admin exists and return all users
+export const ensureDefaultAdminExists = (): AuthUser[] => {
+  const currentUsers = getStoredUsers();
+  
+  // Check if admin user already exists
+  const adminExists = currentUsers.some(
+    user => user.email.toLowerCase() === 'admin' && user.role === 'admin'
+  );
+  
+  if (!adminExists) {
+    console.log('Admin user not found, creating default admin user');
+    // Create default admin user
+    const defaultAdmin = {
+      id: 'default-admin-' + Date.now(),
+      name: 'Administrador',
+      email: 'admin',
+      password: 'admin123',
+      role: 'admin' as const,
+      status: 'approved' as const,
+    };
+    
+    // Add admin to users array
+    const updatedUsers = [...currentUsers, defaultAdmin];
+    
+    // Store the updated users
+    storeUsers(updatedUsers);
+    console.log('Default admin user created');
+    
+    return updatedUsers;
+  }
+  
+  return currentUsers;
+};
+
 // Register service
 export const registerService = async (
   name: string, 
@@ -113,7 +149,8 @@ export const registerService = async (
   // Simulate API request delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  const currentUsers = getStoredUsers();
+  // Ensure admin exists first
+  const currentUsers = ensureDefaultAdminExists();
   
   // Check if email already exists
   if (currentUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
@@ -121,7 +158,7 @@ export const registerService = async (
   }
   
   // Create new user with admin role for the first user (auto-approved), otherwise pending user
-  const isFirstUser = currentUsers.length === 0;
+  const isFirstUser = currentUsers.length === 1 && currentUsers[0].email === 'admin'; // Only admin exists
   const newUser: AuthUser = {
     id: String(Date.now()),
     name,

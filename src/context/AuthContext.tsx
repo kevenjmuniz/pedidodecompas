@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import {
@@ -11,7 +10,8 @@ import {
   getUsersWithoutPasswords,
   approveUserService,
   rejectUserService,
-  getStoredUsers
+  getStoredUsers,
+  ensureDefaultAdminExists
 } from '../services/authService';
 import { toast } from 'sonner';
 
@@ -22,32 +22,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
 
-  // Initialize default admin user if no users exist
-  const initializeDefaultAdmin = () => {
-    const existingUsers = getStoredUsers();
-    if (existingUsers.length === 0) {
-      console.log('No users found, creating default admin user');
-      // Create default admin user
-      const defaultAdmin = {
-        id: 'default-admin-' + Date.now(),
-        name: 'Administrador',
-        email: 'admin',
-        password: 'admin123',
-        role: 'admin' as const,
-        status: 'approved' as const,
-      };
-      
-      // Store the default admin
-      localStorage.setItem('users', JSON.stringify([defaultAdmin]));
-      toast.success('Usuário admin criado com sucesso');
-      console.log('Default admin user created');
-    }
-  };
-
-  // Load user and users on mount
+  // Initialize auth state and ensure default admin exists
   useEffect(() => {
-    // Initialize default admin if needed
-    initializeDefaultAdmin();
+    // Ensure default admin exists
+    ensureDefaultAdminExists();
     
     // Check if user is stored in localStorage
     const storedUser = localStorage.getItem('user');
