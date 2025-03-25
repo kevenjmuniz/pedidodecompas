@@ -54,8 +54,11 @@ export const getSessionToken = (): string | null => {
   return localStorage.getItem('sessionToken');
 };
 
-// Set session token
-export const setSessionToken = (token: string, rememberMe: boolean): void => {
+// Set session token with simple encoding instead of JWT
+export const setSessionToken = (userId: string, rememberMe: boolean): void => {
+  // Simple encoding for the session - not using JWT which requires Buffer
+  const token = btoa(`${userId}-${Date.now()}`);
+  
   // If remember me is checked, set token with longer expiration
   if (rememberMe) {
     localStorage.setItem('sessionToken', token);
@@ -140,8 +143,7 @@ export const loginService = async (
   }
   
   // Generate and store session token
-  const sessionToken = generateSessionToken();
-  setSessionToken(sessionToken, rememberMe);
+  setSessionToken(foundUser.id, rememberMe);
   
   // Store user in localStorage
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
@@ -194,7 +196,7 @@ const isIpBlocked = (ip: string): boolean => {
   return attempts.count >= 5;
 };
 
-// Generate a session token (simulated)
+// Generate a simple session token, avoiding JWT
 const generateSessionToken = (): string => {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
