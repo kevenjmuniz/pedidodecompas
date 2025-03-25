@@ -126,7 +126,7 @@ export function AuthForm() {
           
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
-              Email
+              {authMode === 'login' ? 'Email ou Usuário' : 'Email'}
             </Label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -134,8 +134,8 @@ export function AuthForm() {
               </div>
               <Input
                 id="email"
-                placeholder="seuemail@exemplo.com"
-                type="email"
+                placeholder={authMode === 'login' ? "seuemail@exemplo.com ou nome de usuário" : "seuemail@exemplo.com"}
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 bg-gray-50 border-gray-200 focus:border-mcf-orange"
