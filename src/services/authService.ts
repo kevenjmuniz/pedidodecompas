@@ -49,64 +49,19 @@ export const storeUsers = (users: AuthUser[]): void => {
   }
 };
 
-// Get session token from storage
-export const getSessionToken = (): string | null => {
-  return localStorage.getItem('sessionToken');
-};
-
-// Set session token with simple encoding instead of JWT
-export const setSessionToken = (userId: string, rememberMe: boolean): void => {
-  // Simple encoding for the session - not using JWT which requires Buffer
-  const token = btoa(`${userId}-${Date.now()}`);
-  
-  // If remember me is checked, set token with longer expiration
-  if (rememberMe) {
-    localStorage.setItem('sessionToken', token);
-    localStorage.setItem('sessionExpiry', String(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days
-  } else {
-    localStorage.setItem('sessionToken', token);
-    localStorage.setItem('sessionExpiry', String(Date.now() + 24 * 60 * 60 * 1000)); // 24 hours
-  }
-};
-
-// Clear session token
-export const clearSessionToken = (): void => {
-  localStorage.removeItem('sessionToken');
-  localStorage.removeItem('sessionExpiry');
-};
-
-// Check if session is valid
-export const isSessionValid = (): boolean => {
-  const token = localStorage.getItem('sessionToken');
-  const expiry = localStorage.getItem('sessionExpiry');
-  
-  if (!token || !expiry) return false;
-  
-  return Date.now() < Number(expiry);
-};
-
 // Login service
 export const loginService = async (
   email: string, 
-  password: string,
-  rememberMe: boolean = false
+  password: string
 ): Promise<User> => {
   // Simulate API request delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Track login attempts for security
-  const ipAddress = "127.0.0.1"; // In a real app, this would be the client's IP
-  incrementLoginAttempts(ipAddress);
-  
-  // Check for excessive login attempts
-  if (isIpBlocked(ipAddress)) {
-    throw new Error('Muitas tentativas de login. Tente novamente em 15 minutos.');
-  }
   
   // Debug logging
   console.log('Attempting login with:', email);
   const allUsers = getStoredUsers();
   console.log('All users in system:', allUsers.length);
+  console.log('Users:', allUsers.map(u => ({ id: u.id, email: u.email, status: u.status })));
   
   // Find user with matching credentials - case insensitive email comparison
   const foundUser = allUsers.find(
@@ -131,9 +86,6 @@ export const loginService = async (
     throw new Error('Sua solicitação de acesso foi rejeitada. Entre em contato com o administrador.');
   }
   
-  // Reset login attempts on successful login
-  resetLoginAttempts(ipAddress);
-  
   // Create user object without password
   const { password: _, ...userWithoutPassword } = foundUser;
   
@@ -142,10 +94,7 @@ export const loginService = async (
     userWithoutPassword.status = 'approved';
   }
   
-  // Generate and store session token
-  setSessionToken(foundUser.id, rememberMe);
-  
-  // Store user in localStorage
+  // Store in localStorage
   localStorage.setItem('user', JSON.stringify(userWithoutPassword));
   
   console.log('Login successful for user:', userWithoutPassword.email);
@@ -153,53 +102,6 @@ export const loginService = async (
   
   // Return user without password
   return userWithoutPassword;
-};
-
-// Login attempts tracking
-const loginAttempts: Record<string, { count: number; timestamp: number }> = {};
-
-// Increment login attempts for an IP
-const incrementLoginAttempts = (ip: string): void => {
-  const now = Date.now();
-  if (!loginAttempts[ip]) {
-    loginAttempts[ip] = { count: 1, timestamp: now };
-  } else {
-    // Reset count if more than 15 minutes have passed
-    if (now - loginAttempts[ip].timestamp > 15 * 60 * 1000) {
-      loginAttempts[ip] = { count: 1, timestamp: now };
-    } else {
-      loginAttempts[ip].count += 1;
-      loginAttempts[ip].timestamp = now;
-    }
-  }
-};
-
-// Reset login attempts for an IP
-const resetLoginAttempts = (ip: string): void => {
-  delete loginAttempts[ip];
-};
-
-// Check if IP is blocked due to excessive attempts
-const isIpBlocked = (ip: string): boolean => {
-  if (!loginAttempts[ip]) return false;
-  
-  const now = Date.now();
-  const attempts = loginAttempts[ip];
-  
-  // If more than 15 minutes have passed, reset
-  if (now - attempts.timestamp > 15 * 60 * 1000) {
-    loginAttempts[ip] = { count: 0, timestamp: now };
-    return false;
-  }
-  
-  // Block after 5 failed attempts
-  return attempts.count >= 5;
-};
-
-// Generate a simple session token, avoiding JWT
-const generateSessionToken = (): string => {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
 };
 
 // Register service
@@ -369,85 +271,11 @@ export const resetPasswordService = async (email: string): Promise<void> => {
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   // Check if email exists
-  const users = getStoredUsers();
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  
-  if (!user) {
-    throw new Error('E-mail não encontrado');
+  if (!getStoredUsers().some(u => u.email === email)) {
+    throw new Error('Email not found');
   }
   
-  // In a real application, this would send an email with a reset link
-  // For this demo, we'll generate a reset token and store it
-  const resetToken = Math.random().toString(36).substring(2, 15);
-  const resetExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
-  
-  // Update user with reset token
-  const updatedUsers = users.map(u => {
-    if (u.id === user.id) {
-      return {
-        ...u,
-        resetToken,
-        resetTokenExpiry: resetExpiry
-      };
-    }
-    return u;
-  });
-  
-  // Store updated users
-  storeUsers(updatedUsers);
-  
-  toast.success('E-mail de redefinição de senha enviado. Verifique sua caixa de entrada.');
-};
-
-// Validate password reset token
-export const validateResetToken = (email: string, token: string): boolean => {
-  const users = getStoredUsers();
-  const user = users.find(u => 
-    u.email.toLowerCase() === email.toLowerCase() && 
-    u.resetToken === token &&
-    u.resetTokenExpiry && 
-    u.resetTokenExpiry > Date.now()
-  );
-  
-  return !!user;
-};
-
-// Reset password with token
-export const resetPasswordWithToken = async (
-  email: string, 
-  token: string, 
-  newPassword: string
-): Promise<void> => {
-  // Simulate API request delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const users = getStoredUsers();
-  
-  // Find user with valid token
-  const userIndex = users.findIndex(u => 
-    u.email.toLowerCase() === email.toLowerCase() && 
-    u.resetToken === token &&
-    u.resetTokenExpiry && 
-    u.resetTokenExpiry > Date.now()
-  );
-  
-  if (userIndex === -1) {
-    throw new Error('Token inválido ou expirado');
-  }
-  
-  // Update password and clear token
-  const updatedUsers = [...users];
-  updatedUsers[userIndex] = {
-    ...updatedUsers[userIndex],
-    password: newPassword,
-    resetToken: undefined,
-    resetTokenExpiry: undefined
-  };
-  
-  // Store updated users
-  storeUsers(updatedUsers);
-  
-  toast.success('Senha redefinida com sucesso');
+  toast.success('Password reset email sent. Please check your inbox.');
 };
 
 // Get users without passwords

@@ -21,7 +21,6 @@ import { InventoryProvider } from './context/InventoryContext';
 import { SupplierProvider } from './context/SupplierContext';
 import NotFound from './pages/NotFound';
 import AccountCreated from './pages/AccountCreated';
-import PasswordReset from './pages/PasswordReset';
 
 function App() {
   return (
@@ -47,7 +46,6 @@ function App() {
                     <Route path="/suppliers" element={<Suppliers />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/account-created" element={<AccountCreated />} />
-                    <Route path="/reset-password" element={<PasswordReset />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </SupplierProvider>
