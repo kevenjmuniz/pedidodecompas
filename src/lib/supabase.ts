@@ -96,7 +96,7 @@ export const supabase = {
           return { data: null, error };
         }
       },
-      update: async (updates: any) => {
+      update: (updates: any) => {
         console.log(`Updating data in ${table}:`, updates);
         return {
           eq: async (field: string, value: any) => {
@@ -296,12 +296,13 @@ export const createUser = async (user: DbUser): Promise<AuthUser | null> => {
 };
 
 export const updateUser = async (id: string, updates: Partial<DbUser>): Promise<AuthUser | null> => {
-  const { data, error } = await supabase
+  const response = await supabase
     .from('users')
     .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id);
+  
+  // Agora usamos o método select no objeto retornado, não na Promise
+  const { data, error } = await response.select().single();
   
   if (error) {
     console.error('Erro ao atualizar usuário:', error);
