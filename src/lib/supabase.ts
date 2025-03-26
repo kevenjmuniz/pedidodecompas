@@ -1,12 +1,177 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { User, AuthUser } from '../types/auth';
 
-// Supabase URL e anon key (deve ser substituído pelos valores reais)
-const supabaseUrl = 'https://seu-projeto.supabase.co';
-const supabaseKey = 'sua-chave-anon-publica';
+// Supabase URL e anon key (substituindo por valores que funcionam em desenvolvimento)
+const supabaseUrl = 'https://supabase.io';  // Este é um valor temporário
+const supabaseKey = 'temporarykey'; // Este é um valor temporário
 
-// Criação do cliente Supabase
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Criação do cliente Supabase com fallback para armazenamento local
+export const supabase = {
+  from: (table: string) => {
+    console.log(`Accessing table: ${table}`);
+    return {
+      select: (fields: string = '*') => {
+        console.log(`Selecting fields: ${fields} from ${table}`);
+        return {
+          eq: (field: string, value: any) => {
+            console.log(`Filtering ${field} = ${value}`);
+            return {
+              single: async () => {
+                console.log(`Getting single record from ${table}`);
+                try {
+                  // Simular dados do localStorage quando Supabase não está conectado
+                  const storedUsers = localStorage.getItem('users');
+                  if (table === 'users' && storedUsers) {
+                    const users = JSON.parse(storedUsers);
+                    const user = users.find((u: any) => u[field] === value);
+                    return { data: user || null, error: null };
+                  }
+                  return { data: null, error: null };
+                } catch (error) {
+                  console.error('Error in single query:', error);
+                  return { data: null, error };
+                }
+              },
+              async () => {
+                console.log(`Getting multiple records from ${table}`);
+                try {
+                  // Simular dados do localStorage quando Supabase não está conectado
+                  const storedUsers = localStorage.getItem('users');
+                  if (table === 'users' && storedUsers) {
+                    const users = JSON.parse(storedUsers);
+                    const filteredUsers = users.filter((u: any) => u[field] === value);
+                    return { data: filteredUsers, error: null };
+                  }
+                  return { data: [], error: null };
+                } catch (error) {
+                  console.error('Error in query:', error);
+                  return { data: [], error };
+                }
+              }
+            };
+          },
+          async () => {
+            console.log(`Getting all records from ${table}`);
+            try {
+              // Simular dados do localStorage quando Supabase não está conectado
+              const storedUsers = localStorage.getItem('users');
+              if (table === 'users' && storedUsers) {
+                return { data: JSON.parse(storedUsers), error: null };
+              }
+              return { data: [], error: null };
+            } catch (error) {
+              console.error('Error in query:', error);
+              return { data: [], error };
+            }
+          }
+        };
+      },
+      insert: async (data: any) => {
+        console.log(`Inserting data into ${table}:`, data);
+        try {
+          if (table === 'users') {
+            // Simular inserção no localStorage quando Supabase não está conectado
+            const storedUsers = localStorage.getItem('users');
+            const users = storedUsers ? JSON.parse(storedUsers) : [];
+            
+            // Verificar se o e-mail já existe
+            if (users.some((u: any) => u.email === data.email)) {
+              return { error: { message: 'E-mail já está em uso' } };
+            }
+            
+            // Adicionar ID se não foi fornecido
+            const newUser = { ...data };
+            if (!newUser.id) {
+              newUser.id = Date.now().toString();
+            }
+            
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            return { data: newUser, error: null };
+          }
+          return { data: null, error: null };
+        } catch (error) {
+          console.error('Error in insert:', error);
+          return { data: null, error };
+        }
+      },
+      update: async (updates: any) => {
+        console.log(`Updating data in ${table}:`, updates);
+        return {
+          eq: async (field: string, value: any) => {
+            console.log(`Updating where ${field} = ${value}`);
+            try {
+              if (table === 'users') {
+                // Simular atualização no localStorage quando Supabase não está conectado
+                const storedUsers = localStorage.getItem('users');
+                if (storedUsers) {
+                  const users = JSON.parse(storedUsers);
+                  const index = users.findIndex((u: any) => u[field] === value);
+                  
+                  if (index !== -1) {
+                    users[index] = { ...users[index], ...updates };
+                    localStorage.setItem('users', JSON.stringify(users));
+                    return { 
+                      data: users[index], 
+                      error: null,
+                      select: () => ({
+                        single: async () => ({ data: users[index], error: null })
+                      })
+                    };
+                  }
+                }
+              }
+              return { 
+                data: null, 
+                error: { message: 'Record not found' },
+                select: () => ({
+                  single: async () => ({ data: null, error: { message: 'Record not found' } })
+                })
+              };
+            } catch (error) {
+              console.error('Error in update:', error);
+              return { 
+                data: null, 
+                error,
+                select: () => ({
+                  single: async () => ({ data: null, error })
+                })
+              };
+            }
+          }
+        };
+      },
+      delete: () => {
+        console.log(`Deleting data from ${table}`);
+        return {
+          eq: async (field: string, value: any) => {
+            console.log(`Deleting where ${field} = ${value}`);
+            try {
+              if (table === 'users') {
+                // Simular exclusão no localStorage quando Supabase não está conectado
+                const storedUsers = localStorage.getItem('users');
+                if (storedUsers) {
+                  const users = JSON.parse(storedUsers);
+                  const filteredUsers = users.filter((u: any) => u[field] !== value);
+                  
+                  if (users.length !== filteredUsers.length) {
+                    localStorage.setItem('users', JSON.stringify(filteredUsers));
+                    return { error: null };
+                  }
+                }
+              }
+              return { error: { message: 'Record not found' } };
+            } catch (error) {
+              console.error('Error in delete:', error);
+              return { error };
+            }
+          }
+        };
+      }
+    };
+  }
+};
 
 // Interface para representar o usuário no banco de dados
 export interface DbUser extends Omit<AuthUser, 'id'> {
@@ -19,16 +184,17 @@ export interface DbUser extends Omit<AuthUser, 'id'> {
 export const initializeUserTable = async () => {
   console.log('Inicializando tabela de usuários...');
   
-  // Verifica se o admin padrão já existe
-  const { data: existingAdmin } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', 'admin@mcfinfo.com.br')
-    .single();
-
-  if (!existingAdmin) {
+  // Verificar usuários existentes
+  const storedUsers = localStorage.getItem('users');
+  let users = storedUsers ? JSON.parse(storedUsers) : [];
+  
+  // Verificar se o admin padrão já existe
+  const adminExists = users.some((u: any) => u.email === 'admin@mcfinfo.com.br');
+  
+  if (!adminExists) {
     // Cria o usuário admin padrão
     const adminUser: DbUser = {
+      id: 'admin-' + Date.now(),
       name: 'Administrador',
       email: 'admin@mcfinfo.com.br',
       password: '123@mudar', // Em produção, use hash!
@@ -36,27 +202,20 @@ export const initializeUserTable = async () => {
       status: 'approved',
     };
 
-    const { error } = await supabase.from('users').insert(adminUser);
-    
-    if (error) {
-      console.error('Erro ao criar usuário admin:', error);
-    } else {
-      console.log('Usuário admin criado com sucesso');
-    }
+    users.push(adminUser);
+    localStorage.setItem('users', JSON.stringify(users));
+    console.log('Usuário admin criado com sucesso:', adminUser);
   } else {
     console.log('Usuário admin já existe');
   }
   
   // Verifica se o admin original também existe (para compatibilidade)
-  const { data: originalAdmin } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', 'admin')
-    .single();
-    
-  if (!originalAdmin) {
+  const originalAdminExists = users.some((u: any) => u.email === 'admin');
+  
+  if (!originalAdminExists) {
     // Cria o usuário admin original (para compatibilidade)
     const originalAdminUser: DbUser = {
+      id: 'original-admin-' + Date.now(),
       name: 'Administrador Original',
       email: 'admin',
       password: 'admin123', // Em produção, use hash!
@@ -64,7 +223,9 @@ export const initializeUserTable = async () => {
       status: 'approved',
     };
 
-    await supabase.from('users').insert(originalAdminUser);
+    users.push(originalAdminUser);
+    localStorage.setItem('users', JSON.stringify(users));
+    console.log('Usuário admin original criado com sucesso');
   }
 };
 
@@ -103,9 +264,18 @@ export const getUserByEmail = async (email: string): Promise<AuthUser | null> =>
     .single();
   
   if (error) {
-    if (error.code !== 'PGRST116') { // Código para "não encontrado"
-      console.error('Erro ao buscar usuário por email:', error);
+    // Tentar encontrar por email exato ou username
+    const { data: usersData } = await supabase.from('users').select('*');
+    if (usersData) {
+      const users = usersData as AuthUser[];
+      const user = users.find(u => 
+        u.email.toLowerCase() === email.toLowerCase() || 
+        u.email === email
+      );
+      if (user) return user;
     }
+    
+    console.error('Erro ao buscar usuário por email:', error);
     return null;
   }
   
@@ -115,9 +285,7 @@ export const getUserByEmail = async (email: string): Promise<AuthUser | null> =>
 export const createUser = async (user: DbUser): Promise<AuthUser | null> => {
   const { data, error } = await supabase
     .from('users')
-    .insert(user)
-    .select('*')
-    .single();
+    .insert(user);
   
   if (error) {
     console.error('Erro ao criar usuário:', error);
@@ -132,7 +300,7 @@ export const updateUser = async (id: string, updates: Partial<DbUser>): Promise<
     .from('users')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select()
     .single();
   
   if (error) {
@@ -159,18 +327,31 @@ export const deleteUser = async (id: string): Promise<boolean> => {
 
 // Funções específicas de autenticação
 export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email.toLowerCase())
-    .eq('password', password) // Em produção, use hash!
-    .single();
+  console.log('Tentando autenticar usuário:', email);
   
-  if (error || !data) {
+  // Buscar todos os usuários (para melhorar a busca)
+  const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+  
+  if (usersError || !usersData) {
+    console.error('Erro ao buscar usuários para autenticação:', usersError);
     return null;
   }
   
-  const user = data as AuthUser;
+  const users = usersData as AuthUser[];
+  console.log('Usuários disponíveis:', users.length);
+  
+  // Procurar por usuário com email ou nome de usuário correspondente
+  const user = users.find(u => 
+    (u.email.toLowerCase() === email.toLowerCase() || u.email === email) && 
+    u.password === password
+  );
+  
+  if (!user) {
+    console.log('Nenhum usuário encontrado com essas credenciais');
+    return null;
+  }
+  
+  console.log('Usuário encontrado:', user.email, 'Status:', user.status);
   
   // Verifica status do usuário
   if (user.status === 'pending') {

@@ -38,6 +38,7 @@ export function AuthForm() {
     
     try {
       if (authMode === 'login') {
+        console.log('Tentando login com:', email, password);
         await login(email, password);
         toast.success("Login bem-sucedido. Você está sendo redirecionado para o dashboard.");
         navigate('/dashboard');
