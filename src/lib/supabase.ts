@@ -12,6 +12,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // Interface para representar o usuário no banco de dados
 export interface DbUser extends Omit<AuthUser, 'id'> {
   id?: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 // Função para inicializar a tabela de usuários no Supabase (deve ser chamada apenas uma vez)

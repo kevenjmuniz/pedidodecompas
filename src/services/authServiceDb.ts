@@ -14,7 +14,8 @@ import {
   updateUser,
   deleteUser,
   authenticateUser,
-  initializeUserTable
+  initializeUserTable,
+  DbUser
 } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -84,7 +85,7 @@ export const registerService = async (
   const isFirstUser = allUsers.length === 1 && allUsers[0].email === 'admin'; // Só o admin existe
   
   // Create new user
-  const newUser = {
+  const newUser: DbUser = {
     id: uuidv4(),
     name,
     email: email.toLowerCase(),
@@ -129,13 +130,13 @@ export const addUserService = async (
   }
 
   // Create new user
-  const newUser = {
+  const newUser: DbUser = {
     id: uuidv4(),
     name,
     email: email.toLowerCase(),
     password,
     role,
-    status: 'approved', // Users added by admin are approved by default
+    status: 'approved' as 'approved', // Users added by admin are approved by default
   };
   
   // Salva o usuário no banco de dados
