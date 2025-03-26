@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { Input } from '@/components/ui/input';
@@ -123,12 +122,6 @@ const Suppliers: React.FC = () => {
             <p className="mt-1 text-sm text-muted-foreground">
               {searchQuery ? 'Nenhum resultado para esta pesquisa' : 'Comece adicionando um novo fornecedor'}
             </p>
-            {!searchQuery && (
-              <Button className="mt-4" size="sm" onClick={handleAddNew}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Fornecedor
-              </Button>
-            )}
           </div>
         ) : (
           <div className="rounded-md border">
