@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { User, AuthUser } from '../types/auth';
 
@@ -20,19 +19,19 @@ export interface DbUser extends Omit<AuthUser, 'id'> {
 export const initializeUserTable = async () => {
   console.log('Inicializando tabela de usuários...');
   
-  // Verifica se o admin já existe
+  // Verifica se o admin padrão já existe
   const { data: existingAdmin } = await supabase
     .from('users')
     .select('*')
-    .eq('email', 'admin')
+    .eq('email', 'admin@mcfinfo.com.br')
     .single();
 
   if (!existingAdmin) {
     // Cria o usuário admin padrão
     const adminUser: DbUser = {
       name: 'Administrador',
-      email: 'admin',
-      password: 'admin123', // Em produção, use hash!
+      email: 'admin@mcfinfo.com.br',
+      password: '123@mudar', // Em produção, use hash!
       role: 'admin',
       status: 'approved',
     };
@@ -46,6 +45,26 @@ export const initializeUserTable = async () => {
     }
   } else {
     console.log('Usuário admin já existe');
+  }
+  
+  // Verifica se o admin original também existe (para compatibilidade)
+  const { data: originalAdmin } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', 'admin')
+    .single();
+    
+  if (!originalAdmin) {
+    // Cria o usuário admin original (para compatibilidade)
+    const originalAdminUser: DbUser = {
+      name: 'Administrador Original',
+      email: 'admin',
+      password: 'admin123', // Em produção, use hash!
+      role: 'admin',
+      status: 'approved',
+    };
+
+    await supabase.from('users').insert(originalAdminUser);
   }
 };
 

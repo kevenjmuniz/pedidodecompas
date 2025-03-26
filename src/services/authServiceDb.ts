@@ -1,4 +1,3 @@
-
 import { User, AuthUser } from '../types/auth';
 import { toast } from 'sonner';
 import {
@@ -21,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Inicializa a tabela de usuários e garante que o admin exista
 export const ensureDefaultAdminExists = async (): Promise<AuthUser[]> => {
-  await initializeUserTable();
+  await initializeUserTable(); // Isso vai criar admin@mcfinfo.com.br se não existir
   return await getUsers();
 };
 
