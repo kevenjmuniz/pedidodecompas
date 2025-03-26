@@ -1,14 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AtSign, Eye, EyeOff, Lock, User, ArrowRight } from 'lucide-react';
+import { initializeUserTable } from '../lib/supabase';
 
 export function AuthForm() {
   const { login, register, resetPassword } = useAuth();
@@ -24,6 +23,26 @@ export function AuthForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initializeUserTable();
+        console.log('User table initialized successfully');
+        
+        const users = localStorage.getItem('users');
+        if (users) {
+          console.log('Existing users:', JSON.parse(users));
+        } else {
+          console.log('No existing users found');
+        }
+      } catch (error) {
+        console.error('Failed to initialize user table:', error);
+      }
+    };
+    
+    init();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

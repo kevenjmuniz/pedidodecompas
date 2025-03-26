@@ -33,7 +33,7 @@ export const supabase = {
                   return { data: null, error };
                 }
               },
-              async () => {
+              execute: async () => {
                 console.log(`Getting multiple records from ${table}`);
                 try {
                   // Simular dados do localStorage quando Supabase não está conectado
@@ -51,7 +51,7 @@ export const supabase = {
               }
             };
           },
-          async () => {
+          execute: async () => {
             console.log(`Getting all records from ${table}`);
             try {
               // Simular dados do localStorage quando Supabase não está conectado
@@ -231,7 +231,7 @@ export const initializeUserTable = async () => {
 
 // Funções para manipulação de usuários
 export const getUsers = async (): Promise<AuthUser[]> => {
-  const { data, error } = await supabase.from('users').select('*');
+  const { data, error } = await supabase.from('users').select('*').execute();
   
   if (error) {
     console.error('Erro ao buscar usuários:', error);
@@ -265,7 +265,7 @@ export const getUserByEmail = async (email: string): Promise<AuthUser | null> =>
   
   if (error) {
     // Tentar encontrar por email exato ou username
-    const { data: usersData } = await supabase.from('users').select('*');
+    const { data: usersData } = await supabase.from('users').select('*').execute();
     if (usersData) {
       const users = usersData as AuthUser[];
       const user = users.find(u => 
@@ -330,7 +330,7 @@ export const authenticateUser = async (email: string, password: string): Promise
   console.log('Tentando autenticar usuário:', email);
   
   // Buscar todos os usuários (para melhorar a busca)
-  const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+  const { data: usersData, error: usersError } = await supabase.from('users').select('*').execute();
   
   if (usersError || !usersData) {
     console.error('Erro ao buscar usuários para autenticação:', usersError);
