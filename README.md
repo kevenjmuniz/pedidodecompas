@@ -67,3 +67,10 @@ Simply open [Lovable](https://lovable.dev/projects/003d9c82-aca9-48a8-99f8-004f6
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+
+
+
+rm -f bun.lock bun.lockb
+git add -A
+git commit -m "chore: remove bun lockfiles"
+git push
